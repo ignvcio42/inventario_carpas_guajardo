@@ -1,0 +1,260 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Post {
+    id        Int      @id @default(autoincrement())
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    createdBy   User   @relation(fields: [createdById], references: [id])
+    createdById String
+
+    @@index([name])
+}
+
+// Necessary for Next auth
+model Account {
+    id                       String  @id @default(cuid())
+    userId                   String
+    type                     String
+    provider                 String
+    providerAccountId        String
+    refresh_token            String? // @db.Text
+    access_token             String? // @db.Text
+    expires_at               Int?
+    token_type               String?
+    scope                    String?
+    id_token                 String? // @db.Text
+    session_state            String?
+    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    refresh_token_expires_in Int?
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+    id            String      @id @default(cuid())
+    name          String?
+    email         String?     @unique
+    emailVerified DateTime?
+    image         String?
+    role          Role        @default(WORKER)
+    avatarUrl     String
+    EventUser     EventUser[]
+    accounts      Account[]
+    sessions      Session[]
+    posts         Post[]
+    notifications Notification[]
+    events        Event[]
+    technicalVisits TechnicalEvent[]
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+
+model Item {
+    id        Int         @id @default(autoincrement())
+    name      String
+    type      String
+    quantity  Int
+    unit      String
+    imageUrl  String
+    createdAt DateTime    @default(now())
+    updatedAt DateTime    @updatedAt
+    EventItem EventItem[]
+    movements StockMovement[]
+    reservations EventReservation[]
+}
+
+model Event {
+    id             Int         @id @default(autoincrement())
+    anticipo       Decimal     @db.Decimal(10,2)
+    calefaccion    Boolean
+    carpa          Boolean
+    contacto       String
+    cubrePiso      Boolean
+    descripcion    String
+    direccion      String
+    iluminacion    Boolean
+    metros2        Int
+    montoTotal     Decimal     @db.Decimal(10,2)
+    nombreCliente  String
+    toldo          Boolean
+    horaInicio     DateTime
+    horaTermino    DateTime
+    endDate        DateTime
+    startDate      DateTime
+    estado         Estado
+    comentario     String?
+    createdAt      DateTime    @default(now())
+    updatedAt      DateTime    @updatedAt
+    createdBy      User        @relation(fields: [createdById], references: [id])
+    createdById    String
+    items          EventItem[]
+    users          EventUser[]
+    movements      StockMovement[]
+    reservations   EventReservation[]
+    features       EventFeature[]
+}
+
+model EventUser {
+    eventId Int
+    userId  String
+    event   Event @relation(fields: [eventId], references: [id])
+    user    User  @relation(fields: [userId], references: [id])
+
+    @@id([eventId, userId])
+}
+
+model EventItem {
+    eventId Int
+    itemId  Int
+    quantity Int
+    event   Event @relation(fields: [eventId], references: [id])
+    item    Item  @relation(fields: [itemId], references: [id])
+
+    @@id([eventId, itemId])
+}
+
+model TechnicalEvent {
+    id             Int      @id @default(autoincrement())
+    nombreCliente  String
+    contacto       String
+    direccion      String
+    fechaVisita    DateTime
+    horaVisita     DateTime
+    descripcion    String
+    estado         TechnicalVisitStatus @default(PROGRAMADA)
+    assignedTo     String?
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+    assignedUser   User?    @relation(fields: [assignedTo], references: [id])
+}
+
+model Notification {
+    id        Int       @id @default(autoincrement())
+    title     String
+    message   String
+    createdAt DateTime  @default(now())
+    isRead    Boolean   @default(false)
+    readAt    DateTime?
+    userId    String
+    user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model StockMovement {
+    id        Int            @id @default(autoincrement())
+    itemId    Int
+    type      MovementType
+    quantity  Int
+    reason    String?
+    eventId   Int?
+    createdAt DateTime       @default(now())
+    createdBy String?
+    item      Item           @relation(fields: [itemId], references: [id])
+    event     Event?         @relation(fields: [eventId], references: [id])
+
+    @@index([itemId])
+    @@index([createdAt])
+}
+
+model EventReservation {
+    id        Int      @id @default(autoincrement())
+    eventId   Int
+    itemId    Int
+    quantity  Int
+    status    ReservationStatus @default(ACTIVE)
+    createdAt DateTime @default(now())
+    releasedAt DateTime?
+    event     Event    @relation(fields: [eventId], references: [id])
+    item      Item     @relation(fields: [itemId], references: [id])
+
+    @@unique([eventId, itemId])
+    @@index([itemId])
+}
+
+model EventFeature {
+    id        Int         @id @default(autoincrement())
+    eventId   Int
+    featureType FeatureType
+    isIncluded Boolean    @default(true)
+    quantity  Int?
+    notes     String?
+    createdAt DateTime    @default(now())
+    updatedAt DateTime    @updatedAt
+    event     Event       @relation(fields: [eventId], references: [id])
+
+    @@unique([eventId, featureType])
+    @@index([eventId])
+}
+
+enum FeatureType {
+    CARPA
+    TOLDO
+    ILUMINACION
+    CALEFACCION
+    CUBRE_PISO
+    SONIDO
+    MOBILIARIO
+    DECORACION
+    OTROS
+}
+
+enum MovementType {
+    IN
+    OUT
+    RESERVATION
+    RELEASE
+    ADJUSTMENT
+}
+
+enum ReservationStatus {
+    ACTIVE
+    RELEASED
+}
+
+enum TechnicalVisitStatus {
+    PROGRAMADA
+    REALIZADA
+    REPROGRAMADA
+    CANCELADA
+}
+
+enum Role {
+    SUPER_ADMIN
+    ADMIN
+    MANAGER
+    TECHNICIAN
+    SALES
+    WORKER
+}
+
+enum Estado {
+    PENDIENTE
+    EN_PROCESO
+    COMPLETADO
+    CANCELADO
+}
