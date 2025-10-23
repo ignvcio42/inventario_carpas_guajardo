@@ -1,10 +1,13 @@
 import "~/styles/globals.css";
 import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
+import '@mantine/notifications/styles.css';
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 import AuthProvider from "./_components/auth-provider";
 import { MantineProvider } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
 
 import { TRPCReactProvider } from "~/trpc/react";
 
@@ -21,6 +24,7 @@ export default function RootLayout({
     <html lang="es" className={`${GeistSans.variable}`}>
       <body>
         <MantineProvider>
+          <Notifications />
           <AuthProvider>
             <TRPCReactProvider>{children}</TRPCReactProvider>
           </AuthProvider>

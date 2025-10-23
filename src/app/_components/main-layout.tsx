@@ -28,7 +28,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               size="sm"
             />
             <Title order={4} className="text-gray-900">
-              Inventario Carpas
+              Carpas Guajardo
             </Title>
             <Box style={{ width: 32 }} /> {/* Spacer */}
           </Group>

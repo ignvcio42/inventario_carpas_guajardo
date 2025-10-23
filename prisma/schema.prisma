@@ -66,6 +66,7 @@ model User {
     notifications Notification[]
     events        Event[]
     technicalVisits TechnicalEvent[]
+    sketches      Sketch[]
 }
 
 model VerificationToken {
@@ -91,34 +92,37 @@ model Item {
 }
 
 model Event {
-    id             Int         @id @default(autoincrement())
-    anticipo       Decimal     @db.Decimal(10,2)
-    calefaccion    Boolean
-    carpa          Boolean
-    contacto       String
-    cubrePiso      Boolean
-    descripcion    String
-    direccion      String
-    iluminacion    Boolean
-    metros2        Int
-    montoTotal     Decimal     @db.Decimal(10,2)
-    nombreCliente  String
-    toldo          Boolean
-    horaInicio     DateTime
-    horaTermino    DateTime
-    endDate        DateTime
-    startDate      DateTime
-    estado         Estado
-    comentario     String?
-    createdAt      DateTime    @default(now())
-    updatedAt      DateTime    @updatedAt
-    createdBy      User        @relation(fields: [createdById], references: [id])
-    createdById    String
-    items          EventItem[]
-    users          EventUser[]
-    movements      StockMovement[]
-    reservations   EventReservation[]
-    features       EventFeature[]
+    id                  Int         @id @default(autoincrement())
+    anticipo            Decimal     @db.Decimal(10,2)
+    calefaccion         Boolean
+    carpa               Boolean
+    contacto            String
+    cubrePiso           Boolean
+    descripcion         String
+    direccion           String
+    iluminacion         Boolean
+    metros2             Int
+    montoTotal          Decimal     @db.Decimal(10,2)
+    nombreCliente       String
+    toldo               Boolean
+    horaInicio          DateTime
+    horaTermino         DateTime
+    endDate             DateTime
+    startDate           DateTime
+    estado              Estado
+    comentario          String?
+    technicalVisitId    Int?
+    createdAt           DateTime    @default(now())
+    updatedAt           DateTime    @updatedAt
+    createdBy           User        @relation(fields: [createdById], references: [id])
+    createdById         String
+    technicalVisit      TechnicalEvent? @relation(fields: [technicalVisitId], references: [id])
+    items               EventItem[]
+    users               EventUser[]
+    movements           StockMovement[]
+    reservations        EventReservation[]
+    features            EventFeature[]
+    sketches            Sketch[]
 }
 
 model EventUser {
@@ -153,6 +157,7 @@ model TechnicalEvent {
     createdAt      DateTime @default(now())
     updatedAt      DateTime @updatedAt
     assignedUser   User?    @relation(fields: [assignedTo], references: [id])
+    events         Event[]
 }
 
 model Notification {
@@ -163,6 +168,8 @@ model Notification {
     isRead    Boolean   @default(false)
     readAt    DateTime?
     userId    String
+    actionBy  String?   // Usuario que realizó la acción
+    actionByName String? // Nombre del usuario que realizó la acción
     user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -210,6 +217,22 @@ model EventFeature {
 
     @@unique([eventId, featureType])
     @@index([eventId])
+}
+
+model Sketch {
+    id          Int      @id @default(autoincrement())
+    name        String
+    description String?
+    data        String   @db.Text // JSON con los elementos del boceto
+    eventId     Int?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    createdBy   User     @relation(fields: [createdById], references: [id])
+    createdById String
+    event       Event?   @relation(fields: [eventId], references: [id])
+
+    @@index([eventId])
+    @@index([createdById])
 }
 
 enum FeatureType {

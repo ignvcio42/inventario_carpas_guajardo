@@ -13,7 +13,8 @@ import {
   Button, 
   Box,
   ScrollArea,
-  Divider
+  Divider,
+  Indicator,
 } from '@mantine/core';
 import { 
   IconDashboard, 
@@ -23,8 +24,11 @@ import {
   IconBell, 
   IconSettings, 
   IconLogout,
-  IconX
+  IconX,
+  IconShield,
+  IconPencil,
 } from '@tabler/icons-react';
+import { api } from "~/trpc/react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -34,13 +38,17 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
+  const { data: unreadCount } = api.notification.getUnreadCount.useQuery();
+  const { data: isAdmin } = api.admin.isAdmin.useQuery();
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: IconDashboard },
-    { name: "Eventos", href: "/events", icon: IconCalendarEvent },
+    { name: "Eventos", href: "/eventos", icon: IconCalendarEvent },
     { name: "Visitas Técnicas", href: "/technical-visits", icon: IconTool },
     { name: "Inventario", href: "/inventory", icon: IconPackage },
-    { name: "Notificaciones", href: "/notifications", icon: IconBell },
+    { name: "Bocetos", href: "/sketches", icon: IconPencil },
+    { name: "Notificaciones", href: "/notifications", icon: IconBell, badge: unreadCount },
+    ...(isAdmin ? [{ name: "Panel Admin", href: "/admin", icon: IconShield }] : []),
     { name: "Configuración", href: "/settings", icon: IconSettings },
   ];
 
@@ -68,7 +76,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Header */}
           <Group justify="space-between" className="p-4 border-b">
             <Text size="xl" fw={700} className="text-gray-900">
-              Inventario Carpas
+              Carpas Guajardo
             </Text>
             <button
               onClick={onClose}
@@ -110,14 +118,32 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 const IconComponent = item.icon;
+                const showBadge = item.badge && Number(item.badge) > 0;
                 
                 return (
                   <NavLink
                     key={item.name}
                     component={Link}
                     href={item.href}
-                    label={item.name}
-                    leftSection={<IconComponent size={16} />}
+                    label={
+                      <Group justify="space-between" style={{ flex: 1 }}>
+                        <Text size="sm">{item.name}</Text>
+                        {showBadge && (
+                          <Badge size="xs" color="red" variant="filled" circle>
+                            {item.badge}
+                          </Badge>
+                        )}
+                      </Group>
+                    }
+                    leftSection={
+                      showBadge ? (
+                        <Indicator color="red" size={8} processing>
+                          <IconComponent size={16} />
+                        </Indicator>
+                      ) : (
+                        <IconComponent size={16} />
+                      )
+                    }
                     active={isActive}
                     onClick={onClose}
                     className="mb-1"

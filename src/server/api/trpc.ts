@@ -131,3 +131,35 @@ export const protectedProcedure = t.procedure
       },
     });
   });
+
+/**
+ * Admin procedure
+ *
+ * Only accessible to users with SUPER_ADMIN or ADMIN roles
+ */
+export const adminProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(async ({ ctx, next }) => {
+    if (!ctx.session || !ctx.session.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+
+    // Obtener el rol del usuario de la base de datos
+    const user = await db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { role: true },
+    });
+
+    if (!user || (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN")) {
+      throw new TRPCError({ 
+        code: "FORBIDDEN",
+        message: "Solo administradores pueden acceder a esta función"
+      });
+    }
+
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    });
+  });

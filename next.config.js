@@ -5,6 +5,14 @@
 await import("./src/env.js");
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  webpack: (config, { isServer }) => {
+    // Excluir canvas y konva del bundle del servidor
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'canvas', 'konva'];
+    }
+    return config;
+  },
+};
 
 export default config;

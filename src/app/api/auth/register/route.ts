@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         name,
         email,
         password,
-        role: Role.ADMIN, // Por defecto ADMIN para el primer usuario
+        role: Role.WORKER, // Por defecto WORKER para nuevos usuarios
         avatarUrl: "", // Se puede actualizar después
       },
     });
