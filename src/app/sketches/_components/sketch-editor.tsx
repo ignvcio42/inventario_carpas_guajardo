@@ -11,6 +11,8 @@ import {
   ActionIcon,
   Text as MantineText,
   ColorInput,
+  Modal,
+  TextInput,
 } from "@mantine/core";
 import {
   IconSquarePlus,
@@ -21,6 +23,7 @@ import {
   IconZoomReset,
   IconArrowBackUp,
   IconArrowForwardUp,
+  IconCheck,
 } from "@tabler/icons-react";
 
 interface ShapeElement {
@@ -70,7 +73,15 @@ export default function SketchEditor({
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [editingTextValue, setEditingTextValue] = useState("");
   const [editingTextPosition, setEditingTextPosition] = useState({ x: 0, y: 0 });
-  const textInputRef = useRef<HTMLInputElement>(null);
+  const textInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Estado para modal de medida
+  const [measurementModalOpen, setMeasurementModalOpen] = useState(false);
+  const [measurementValue, setMeasurementValue] = useState("");
+  const [measurementData, setMeasurementData] = useState<{
+    element: ShapeElement;
+    side: "top" | "right" | "bottom" | "left";
+  } | null>(null);
 
   const handleWheel = (e: any) => {
     e.evt.preventDefault();
@@ -390,8 +401,17 @@ export default function SketchEditor({
   const addMeasurement = (element: ShapeElement, side: "top" | "right" | "bottom" | "left") => {
     if (!element.width || !element.height) return;
 
-    const measurement = prompt(`Ingrese la medida para el lado ${side}:`);
-    if (!measurement) return;
+    // Abrir el modal en lugar de usar prompt
+    setMeasurementData({ element, side });
+    setMeasurementValue("");
+    setMeasurementModalOpen(true);
+  };
+
+  const confirmMeasurement = () => {
+    if (!measurementValue.trim() || !measurementData) return;
+
+    const { element, side } = measurementData;
+    if (!element.width || !element.height) return;
 
     let x = element.x;
     let y = element.y;
@@ -420,13 +440,18 @@ export default function SketchEditor({
       type: "measurement",
       x,
       y,
-      text: measurement,
+      text: measurementValue,
       fontSize: 14,
       fill: "#e03131",
     };
 
     const newElements = [...elements, newMeasurement];
     saveToHistory(newElements);
+    
+    // Cerrar el modal
+    setMeasurementModalOpen(false);
+    setMeasurementValue("");
+    setMeasurementData(null);
   };
 
   const handleDelete = () => {
@@ -484,12 +509,12 @@ export default function SketchEditor({
   };
 
   const handleTextKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      finishEditingText();
-    } else if (e.key === "Escape") {
+    if (e.key === "Escape") {
+      // Cancelar edición con Escape
       setEditingTextId(null);
       setEditingTextValue("");
     }
+    // Enter ahora agrega una nueva línea en el textarea (comportamiento por defecto)
   };
 
   const selectedElement = elements.find((el) => el.id === selectedId);
@@ -763,31 +788,92 @@ export default function SketchEditor({
           </Layer>
         </Stage>
         
-        {/* Input para editar texto directamente en el canvas */}
+        {/* Textarea para editar texto directamente en el canvas */}
         {editingTextId && (
-          <input
-            ref={textInputRef}
-            type="text"
-            value={editingTextValue}
-            onChange={(e) => setEditingTextValue(e.target.value)}
-            onBlur={finishEditingText}
-            onKeyDown={handleTextKeyDown}
+          <div
             style={{
               position: "absolute",
               top: editingTextPosition.y,
               left: editingTextPosition.x,
-              fontSize: "16px",
-              padding: "4px 8px",
-              border: "2px solid #4287f5",
-              borderRadius: "4px",
-              outline: "none",
-              background: "white",
-              minWidth: "150px",
               zIndex: 1000,
+              display: "flex",
+              flexDirection: "column",
+              gap: "4px",
             }}
-          />
+          >
+            <textarea
+              ref={textInputRef}
+              value={editingTextValue}
+              onChange={(e) => setEditingTextValue(e.target.value)}
+              onKeyDown={handleTextKeyDown}
+              style={{
+                fontSize: "16px",
+                padding: "8px",
+                border: "2px solid #4287f5",
+                borderRadius: "4px",
+                outline: "none",
+                background: "white",
+                minWidth: "200px",
+                minHeight: "60px",
+                maxWidth: "400px",
+                resize: "both",
+                fontFamily: "inherit",
+              }}
+            />
+            <Button
+              size="xs"
+              onClick={finishEditingText}
+              leftSection={<IconCheck size={14} />}
+              fullWidth
+            >
+              Aceptar (Esc para cancelar)
+            </Button>
+          </div>
         )}
       </Paper>
+
+      {/* Modal para agregar medida */}
+      <Modal
+        opened={measurementModalOpen}
+        onClose={() => {
+          setMeasurementModalOpen(false);
+          setMeasurementValue("");
+          setMeasurementData(null);
+        }}
+        title={`Medida para el lado ${measurementData?.side === 'top' ? 'superior' : measurementData?.side === 'bottom' ? 'inferior' : measurementData?.side === 'left' ? 'izquierdo' : 'derecho'}`}
+        size="sm"
+      >
+        <Stack>
+          <TextInput
+            label="Medida"
+            placeholder="Ej: 10m, 5.5m, 15 metros"
+            value={measurementValue}
+            onChange={(e) => setMeasurementValue(e.currentTarget.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                confirmMeasurement();
+              }
+            }}
+            autoFocus
+            data-autofocus
+          />
+          <Group justify="flex-end" gap="xs">
+            <Button
+              variant="subtle"
+              onClick={() => {
+                setMeasurementModalOpen(false);
+                setMeasurementValue("");
+                setMeasurementData(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={confirmMeasurement} disabled={!measurementValue.trim()}>
+              Agregar
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Stack>
   );
 }

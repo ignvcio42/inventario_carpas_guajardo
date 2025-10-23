@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import MainLayout from "../_components/main-layout";
@@ -23,7 +24,12 @@ import {
   Paper,
   Divider,
   ScrollArea,
+  SegmentedControl,
+  ActionIcon,
+  Indicator,
+  Popover,
 } from '@mantine/core';
+import { Calendar } from '@mantine/dates';
 import { 
   IconCalendarEvent, 
   IconPackage, 
@@ -41,6 +47,10 @@ import {
   IconUser,
   IconTrendingUp,
   IconTrendingDown,
+  IconList,
+  IconCalendar,
+  IconChevronLeft,
+  IconChevronRight,
 } from '@tabler/icons-react';
 import { api } from "~/trpc/react";
 
@@ -53,6 +63,14 @@ export default function Dashboard() {
   const { data: upcomingEvents } = api.dashboard.getUpcomingEvents.useQuery();
   const { data: upcomingVisits } = api.dashboard.getUpcomingVisits.useQuery();
   const { data: eventsByStatus } = api.dashboard.getEventsByStatus.useQuery();
+
+  // Estados para la vista de calendario
+  const [eventsView, setEventsView] = useState<"list" | "calendar">("calendar");
+  const [visitsView, setVisitsView] = useState<"list" | "calendar">("calendar");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentVisitsMonth, setCurrentVisitsMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedVisitDate, setSelectedVisitDate] = useState<Date | null>(null);
 
   if (status === "loading" || statsLoading) {
     return (
@@ -97,11 +115,13 @@ export default function Dashboard() {
     }).format(Number(amount));
   };
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString("es-CL", {
+  const formatDate = (date: Date | string) => {
+    const d = new Date(date);
+    return d.toLocaleDateString("es-CL", {
       day: "numeric",
       month: "short",
       year: "numeric",
+      timeZone: "America/Santiago",
     });
   };
 
@@ -110,6 +130,106 @@ export default function Dashboard() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  // Funciones para el calendario
+  const isSameDay = (date1: Date, date2: Date) => {
+    return (
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear()
+    );
+  };
+
+  const getLocalDate = (dateString: Date | string) => {
+    const date = new Date(dateString);
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  };
+
+  const getDayEvents = (date: Date) => {
+    if (!upcomingEvents) return [];
+    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    return upcomingEvents
+      .map((event) => {
+        const startDate = getLocalDate(event.startDate);
+        const endDate = getLocalDate(event.endDate);
+        const montajeDate = getLocalDate(event.horaInicio);
+        const desmonteDate = getLocalDate(event.horaTermino);
+        
+        const types = [];
+        
+        // Verificar si es día de montaje
+        if (checkDate.getTime() === montajeDate.getTime()) {
+          types.push('montaje');
+        }
+        
+        // Verificar si es día del evento
+        if (checkDate >= startDate && checkDate <= endDate) {
+          types.push('evento');
+        }
+        
+        // Verificar si es día de desmontaje
+        if (checkDate.getTime() === desmonteDate.getTime()) {
+          types.push('desmontaje');
+        }
+        
+        return types.length > 0 ? { ...event, types } : null;
+      })
+      .filter((event): event is typeof upcomingEvents[0] & { types: string[] } => event !== null);
+  };
+
+  const hasEventsOnDay = (date: Date) => {
+    return getDayEvents(date).length > 0;
+  };
+
+  const getEventsForSelectedDate = () => {
+    if (!selectedDate) return [];
+    return getDayEvents(selectedDate);
+  };
+
+  const goToPreviousMonth = () => {
+    setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const goToNextMonth = () => {
+    setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const goToToday = () => {
+    setCurrentMonth(new Date());
+  };
+
+  // Funciones para visitas técnicas
+  const getDayVisits = (date: Date) => {
+    if (!upcomingVisits) return [];
+    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    return upcomingVisits.filter((visit) => {
+      const visitDate = getLocalDate(visit.fechaVisita);
+      return checkDate.getTime() === visitDate.getTime();
+    });
+  };
+
+  const hasVisitsOnDay = (date: Date) => {
+    return getDayVisits(date).length > 0;
+  };
+
+  const getVisitsForSelectedDate = () => {
+    if (!selectedVisitDate) return [];
+    return getDayVisits(selectedVisitDate);
+  };
+
+  const goToPreviousVisitsMonth = () => {
+    setCurrentVisitsMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const goToNextVisitsMonth = () => {
+    setCurrentVisitsMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const goToTodayVisits = () => {
+    setCurrentVisitsMonth(new Date());
   };
 
   // Calcular porcentaje de eventos por estado
@@ -269,165 +389,515 @@ export default function Dashboard() {
             </Card>
 
             <Grid>
-              {/* Próximos Eventos - Calendario */}
+              {/* Próximos Eventos - Lista/Calendario */}
               <Grid.Col span={{ base: 12, lg: 6 }}>
                 <Card shadow="sm" padding="lg" radius="md" className="bg-white" h="100%">
-                  <Group justify="space-between" mb="md">
-                    <Group gap="xs">
-                      <ThemeIcon size="md" radius="md" color="blue" variant="light">
-                        <IconCalendarEvent size={18} />
-                      </ThemeIcon>
-                      <Title order={3} className="text-gray-900">Próximos Eventos</Title>
+                  <Stack gap="md">
+                    <Group justify="space-between">
+                      <Group gap="xs">
+                        <ThemeIcon size="md" radius="md" color="blue" variant="light">
+                          <IconCalendarEvent size={18} />
+                        </ThemeIcon>
+                        <Title order={3} className="text-gray-900">Próximos Eventos</Title>
+                      </Group>
+                      <Group gap="xs">
+                        <SegmentedControl
+                          value={eventsView}
+                          onChange={(value) => setEventsView(value as "list" | "calendar")}
+                          data={[
+                            { label: <IconCalendar size={16} />, value: "calendar" },
+                            { label: <IconList size={16} />, value: "list" },
+                          ]}
+                          size="xs"
+                        />
+                        <Button
+                          variant="subtle"
+                          size="xs"
+                          rightSection={<IconArrowUpRight size={14} />}
+                          onClick={() => router.push('/eventos')}
+                        >
+                          Ver todos
+                        </Button>
+                      </Group>
                     </Group>
-                    <Button
-                      variant="subtle"
-                      size="xs"
-                      rightSection={<IconArrowUpRight size={14} />}
-                      onClick={() => router.push('/eventos')}
-                    >
-                      Ver todos
-                    </Button>
-                  </Group>
-                  <ScrollArea h={400}>
-                    {upcomingEvents && upcomingEvents.length > 0 ? (
+
+                    {eventsView === "calendar" ? (
                       <Stack gap="sm">
-                        {upcomingEvents.map((event) => (
-                          <Paper
-                            key={event.id}
-                            p="md"
-                            withBorder
-                            radius="md"
-                            className="hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => router.push('/eventos')}
-                          >
-                            <Group justify="space-between" mb="xs">
-                              <Group gap="xs">
-                                <ThemeIcon
-                                  size="sm"
-                                  radius="md"
-                                  color={getStatusColor(event.estado)}
-                                  variant="light"
-                                >
-                                  {getStatusIcon(event.estado)}
-                                </ThemeIcon>
-                                <Text fw={600} size="sm">{event.nombreCliente}</Text>
-                              </Group>
-                              <Badge size="sm" color={getStatusColor(event.estado)}>
-                                {event.estado}
-                              </Badge>
-                            </Group>
-                            <Group gap="xs" mb="xs">
-                              <IconCalendarEvent size={14} className="text-gray-400" />
-                              <Text size="xs" c="dimmed">
-                                {formatDate(event.startDate)} - {formatDate(event.endDate)}
+                        {/* Navegación del mes */}
+                        <Group justify="space-between" align="center">
+                          <ActionIcon variant="subtle" onClick={goToPreviousMonth}>
+                            <IconChevronLeft size={18} />
+                          </ActionIcon>
+                          <Text fw={600}>
+                            {currentMonth.toLocaleDateString("es-CL", { month: "long", year: "numeric" })}
+                          </Text>
+                          <ActionIcon variant="subtle" onClick={goToNextMonth}>
+                            <IconChevronRight size={18} />
+                          </ActionIcon>
+                        </Group>
+                        <Button size="xs" variant="light" onClick={goToToday} fullWidth>
+                          Hoy
+                        </Button>
+
+                        {/* Calendario */}
+                        <div style={{ width: "100%" }}>
+                          <Calendar
+                            date={currentMonth}
+                            onDateChange={(date) => setCurrentMonth(new Date(date))}
+                            getDayProps={(dateString) => {
+                              const date = new Date(dateString);
+                              const hasEvents = hasEventsOnDay(date);
+                              const isSelected = selectedDate && isSameDay(date, selectedDate);
+                              const eventsCount = getDayEvents(date).length;
+                              
+                              return {
+                                onClick: () => setSelectedDate(date),
+                                style: {
+                                  backgroundColor: isSelected ? "#228be6" : hasEvents ? "#e7f5ff" : undefined,
+                                  color: isSelected ? "white" : hasEvents ? "#228be6" : undefined,
+                                  fontWeight: hasEvents ? 700 : 400,
+                                  position: "relative" as const,
+                                  borderRadius: "8px",
+                                  transition: "all 0.2s ease",
+                                },
+                                children: (
+                                  <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                                    <div style={{ paddingTop: "8px" }}>{date.getDate()}</div>
+                                    {hasEvents && (
+                                      <div
+                                        style={{
+                                          position: "absolute",
+                                          bottom: "6px",
+                                          left: "50%",
+                                          transform: "translateX(-50%)",
+                                          display: "flex",
+                                          gap: "2px",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                        }}
+                                      >
+                                        {Array.from({ length: Math.min(eventsCount, 3) }).map((_, i) => (
+                                          <div
+                                            key={i}
+                                            style={{
+                                              width: "5px",
+                                              height: "5px",
+                                              borderRadius: "50%",
+                                              backgroundColor: isSelected ? "white" : "#228be6",
+                                            }}
+                                          />
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ),
+                              };
+                            }}
+                            styles={{
+                              calendarHeader: { maxWidth: "100%" },
+                              month: { width: "100%" },
+                              monthCell: { 
+                                height: "60px",
+                              },
+                            }}
+                          />
+                        </div>
+
+                        {/* Eventos del día seleccionado */}
+                        {selectedDate && (
+                          <Paper p="sm" withBorder>
+                            <Text size="sm" fw={600} mb="xs">
+                              Eventos para {formatDate(selectedDate)}
+                            </Text>
+                            {getEventsForSelectedDate().length > 0 ? (
+                              <Stack gap="xs">
+                                {getEventsForSelectedDate().map((event: any) => (
+                                  <Paper
+                                    key={event.id}
+                                    p="xs"
+                                    withBorder
+                                    radius="sm"
+                                    className="hover:shadow-sm transition-shadow cursor-pointer"
+                                    onClick={() => router.push('/eventos')}
+                                  >
+                                    <Group justify="space-between" mb={4}>
+                                      <Text size="xs" fw={600} lineClamp={1}>
+                                        {event.nombreCliente}
+                                      </Text>
+                                      <Badge size="xs" color={getStatusColor(event.estado)}>
+                                        {event.estado}
+                                      </Badge>
+                                    </Group>
+                                    
+                                    {/* Badges para tipo de evento */}
+                                    <Group gap={4} mb={4}>
+                                      {event.types?.includes('montaje') && (
+                                        <Badge size="xs" color="orange" variant="dot">
+                                          🏗️ Montaje
+                                        </Badge>
+                                      )}
+                                      {event.types?.includes('evento') && (
+                                        <Badge size="xs" color="blue" variant="dot">
+                                          🎉 Evento
+                                        </Badge>
+                                      )}
+                                      {event.types?.includes('desmontaje') && (
+                                        <Badge size="xs" color="grape" variant="dot">
+                                          🔧 Desmontaje
+                                        </Badge>
+                                      )}
+                                    </Group>
+                                    
+                                    {/* Horarios según el tipo */}
+                                    <Stack gap={2}>
+                                      {event.types?.includes('montaje') && (
+                                        <Text size="xs" c="orange">
+                                          Montaje: {new Date(event.horaInicio).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                                        </Text>
+                                      )}
+                                      {event.types?.includes('evento') && (
+                                        <Text size="xs" c="blue">
+                                          Evento: {new Date(event.startDate).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })} - {new Date(event.endDate).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                                        </Text>
+                                      )}
+                                      {event.types?.includes('desmontaje') && (
+                                        <Text size="xs" c="grape">
+                                          Desmontaje: {new Date(event.horaTermino).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                                        </Text>
+                                      )}
+                                    </Stack>
+                                    
+                                    <Text size="xs" c="dimmed" lineClamp={1} mt={4}>
+                                      <IconMapPin size={12} style={{ display: "inline", marginRight: 4 }} />
+                                      {event.direccion}
+                                    </Text>
+                                  </Paper>
+                                ))}
+                              </Stack>
+                            ) : (
+                              <Text size="xs" c="dimmed" ta="center" py="sm">
+                                No hay eventos este día
                               </Text>
-                            </Group>
-                            <Group gap="xs" mb="xs">
-                              <IconMapPin size={14} className="text-gray-400" />
-                              <Text size="xs" c="dimmed" lineClamp={1}>
-                                {event.direccion}
-                              </Text>
-                            </Group>
-                            <Group justify="space-between">
-                              <Text size="xs" c="dimmed">Monto:</Text>
-                              <Text size="sm" fw={600} c="green">
-                                {formatCurrency(Number(event.montoTotal))}
-                              </Text>
-                            </Group>
+                            )}
                           </Paper>
-                        ))}
+                        )}
                       </Stack>
                     ) : (
-                      <Center h={300}>
-                        <Stack align="center" gap="sm">
-                          <IconCalendarEvent size={48} className="text-gray-300" stroke={1.5} />
-                          <Text c="dimmed">No hay eventos próximos</Text>
-                        </Stack>
-                      </Center>
+                      <ScrollArea h={400}>
+                        {upcomingEvents && upcomingEvents.length > 0 ? (
+                          <Stack gap="sm">
+                            {upcomingEvents.map((event: any) => (
+                              <Paper
+                                key={event.id}
+                                p="md"
+                                withBorder
+                                radius="md"
+                                className="hover:shadow-md transition-shadow cursor-pointer"
+                                onClick={() => router.push('/eventos')}
+                              >
+                                <Group justify="space-between" mb="xs">
+                                  <Group gap="xs">
+                                    <ThemeIcon
+                                      size="sm"
+                                      radius="md"
+                                      color={getStatusColor(event.estado)}
+                                      variant="light"
+                                    >
+                                      {getStatusIcon(event.estado)}
+                                    </ThemeIcon>
+                                    <Text fw={600} size="sm">{event.nombreCliente}</Text>
+                                  </Group>
+                                  <Badge size="sm" color={getStatusColor(event.estado)}>
+                                    {event.estado}
+                                  </Badge>
+                                </Group>
+                                
+                                <Divider my="xs" label="🎉 Evento" labelPosition="left" size="xs" />
+                                <Group gap="xs" mb="xs">
+                                  <IconCalendarEvent size={14} className="text-blue-500" />
+                                  <Text size="xs" c="blue">
+                                    {formatDate(event.startDate)} - {formatDate(event.endDate)}
+                                  </Text>
+                                </Group>
+                                
+                                <Divider my="xs" label="🏗️ Logística" labelPosition="left" size="xs" />
+                                <Stack gap={4} mb="xs">
+                                  <Group gap="xs">
+                                    <Text size="xs" c="orange" fw={500}>Montaje:</Text>
+                                    <Text size="xs" c="dimmed">
+                                      {formatDate(event.horaInicio)} {new Date(event.horaInicio).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                                    </Text>
+                                  </Group>
+                                  <Group gap="xs">
+                                    <Text size="xs" c="grape" fw={500}>Desmontaje:</Text>
+                                    <Text size="xs" c="dimmed">
+                                      {formatDate(event.horaTermino)} {new Date(event.horaTermino).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                                    </Text>
+                                  </Group>
+                                </Stack>
+                                
+                                <Group gap="xs" mb="xs">
+                                  <IconMapPin size={14} className="text-gray-400" />
+                                  <Text size="xs" c="dimmed" lineClamp={1}>
+                                    {event.direccion}
+                                  </Text>
+                                </Group>
+                                <Group justify="space-between">
+                                  <Text size="xs" c="dimmed">Monto:</Text>
+                                  <Text size="sm" fw={600} c="green">
+                                    {formatCurrency(Number(event.montoTotal))}
+                                  </Text>
+                                </Group>
+                              </Paper>
+                            ))}
+                          </Stack>
+                        ) : (
+                          <Center h={300}>
+                            <Stack align="center" gap="sm">
+                              <IconCalendarEvent size={48} className="text-gray-300" stroke={1.5} />
+                              <Text c="dimmed">No hay eventos próximos</Text>
+                            </Stack>
+                          </Center>
+                        )}
+                      </ScrollArea>
                     )}
-                  </ScrollArea>
+                  </Stack>
                 </Card>
               </Grid.Col>
 
-              {/* Próximas Visitas Técnicas */}
+              {/* Próximas Visitas Técnicas - Lista/Calendario */}
               <Grid.Col span={{ base: 12, lg: 6 }}>
                 <Card shadow="sm" padding="lg" radius="md" className="bg-white" h="100%">
-                  <Group justify="space-between" mb="md">
-                    <Group gap="xs">
-                      <ThemeIcon size="md" radius="md" color="orange" variant="light">
-                        <IconTool size={18} />
-                      </ThemeIcon>
-                      <Title order={3} className="text-gray-900">Próximas Visitas</Title>
+                  <Stack gap="md">
+                    <Group justify="space-between">
+                      <Group gap="xs">
+                        <ThemeIcon size="md" radius="md" color="orange" variant="light">
+                          <IconTool size={18} />
+                        </ThemeIcon>
+                        <Title order={3} className="text-gray-900">Próximas Visitas</Title>
+                      </Group>
+                      <Group gap="xs">
+                        <SegmentedControl
+                          value={visitsView}
+                          onChange={(value) => setVisitsView(value as "list" | "calendar")}
+                          data={[
+                            { label: <IconCalendar size={16} />, value: "calendar" },
+                            { label: <IconList size={16} />, value: "list" },
+                          ]}
+                          size="xs"
+                        />
+                        <Button
+                          variant="subtle"
+                          size="xs"
+                          rightSection={<IconArrowUpRight size={14} />}
+                          onClick={() => router.push('/technical-visits')}
+                        >
+                          Ver todas
+                        </Button>
+                      </Group>
                     </Group>
-                    <Button
-                      variant="subtle"
-                      size="xs"
-                      rightSection={<IconArrowUpRight size={14} />}
-                      onClick={() => router.push('/technical-visits')}
-                    >
-                      Ver todas
-                    </Button>
-                  </Group>
-                  <ScrollArea h={400}>
-                    {upcomingVisits && upcomingVisits.length > 0 ? (
+
+                    {visitsView === "calendar" ? (
                       <Stack gap="sm">
-                        {upcomingVisits.map((visit) => (
-                          <Paper
-                            key={visit.id}
-                            p="md"
-                            withBorder
-                            radius="md"
-                            className="hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => router.push('/technical-visits')}
-                          >
-                            <Group justify="space-between" mb="xs">
-                              <Group gap="xs">
-                                <ThemeIcon
-                                  size="sm"
-                                  radius="md"
-                                  color={getStatusColor(visit.estado)}
-                                  variant="light"
-                                >
-                                  {getStatusIcon(visit.estado)}
-                                </ThemeIcon>
-                                <Text fw={600} size="sm">{visit.nombreCliente}</Text>
-                              </Group>
-                              <Badge size="sm" color={getStatusColor(visit.estado)}>
-                                {visit.estado}
-                              </Badge>
-                            </Group>
-                            <Group gap="xs" mb="xs">
-                              <IconCalendarEvent size={14} className="text-gray-400" />
-                              <Text size="xs" c="dimmed">
-                                {formatDate(visit.fechaVisita)} - {formatTime(visit.horaVisita)}
+                        {/* Navegación del mes */}
+                        <Group justify="space-between" align="center">
+                          <ActionIcon variant="subtle" onClick={goToPreviousVisitsMonth}>
+                            <IconChevronLeft size={18} />
+                          </ActionIcon>
+                          <Text fw={600}>
+                            {currentVisitsMonth.toLocaleDateString("es-CL", { month: "long", year: "numeric" })}
+                          </Text>
+                          <ActionIcon variant="subtle" onClick={goToNextVisitsMonth}>
+                            <IconChevronRight size={18} />
+                          </ActionIcon>
+                        </Group>
+                        <Button size="xs" variant="light" onClick={goToTodayVisits} fullWidth>
+                          Hoy
+                        </Button>
+
+                        {/* Calendario */}
+                        <div style={{ width: "100%" }}>
+                          <Calendar
+                            date={currentVisitsMonth}
+                            onDateChange={(date) => setCurrentVisitsMonth(new Date(date))}
+                            getDayProps={(dateString) => {
+                              const date = new Date(dateString);
+                              const hasVisits = hasVisitsOnDay(date);
+                              const isSelected = selectedVisitDate && isSameDay(date, selectedVisitDate);
+                              const visitsCount = getDayVisits(date).length;
+                              
+                              return {
+                                onClick: () => setSelectedVisitDate(date),
+                                style: {
+                                  backgroundColor: isSelected ? "#fd7e14" : hasVisits ? "#fff4e6" : undefined,
+                                  color: isSelected ? "white" : hasVisits ? "#fd7e14" : undefined,
+                                  fontWeight: hasVisits ? 700 : 400,
+                                  position: "relative" as const,
+                                  borderRadius: "8px",
+                                  transition: "all 0.2s ease",
+                                },
+                                children: (
+                                  <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                                    <div style={{ paddingTop: "8px" }}>{date.getDate()}</div>
+                                    {hasVisits && (
+                                      <div
+                                        style={{
+                                          position: "absolute",
+                                          bottom: "6px",
+                                          left: "50%",
+                                          transform: "translateX(-50%)",
+                                          display: "flex",
+                                          gap: "2px",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                        }}
+                                      >
+                                        {Array.from({ length: Math.min(visitsCount, 3) }).map((_, i) => (
+                                          <div
+                                            key={i}
+                                            style={{
+                                              width: "5px",
+                                              height: "5px",
+                                              borderRadius: "50%",
+                                              backgroundColor: isSelected ? "white" : "#fd7e14",
+                                            }}
+                                          />
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ),
+                              };
+                            }}
+                            styles={{
+                              calendarHeader: { maxWidth: "100%" },
+                              month: { width: "100%" },
+                              monthCell: { 
+                                height: "60px",
+                              },
+                            }}
+                          />
+                        </div>
+
+                        {/* Visitas del día seleccionado */}
+                        {selectedVisitDate && (
+                          <Paper p="sm" withBorder>
+                            <Text size="sm" fw={600} mb="xs">
+                              Visitas para {formatDate(selectedVisitDate)}
+                            </Text>
+                            {getVisitsForSelectedDate().length > 0 ? (
+                              <Stack gap="xs">
+                                {getVisitsForSelectedDate().map((visit: any) => (
+                                  <Paper
+                                    key={visit.id}
+                                    p="xs"
+                                    withBorder
+                                    radius="sm"
+                                    className="hover:shadow-sm transition-shadow cursor-pointer"
+                                    onClick={() => router.push('/technical-visits')}
+                                  >
+                                    <Group justify="space-between" mb={4}>
+                                      <Text size="xs" fw={600} lineClamp={1}>
+                                        {visit.nombreCliente}
+                                      </Text>
+                                      <Badge size="xs" color={getStatusColor(visit.estado)}>
+                                        {visit.estado}
+                                      </Badge>
+                                    </Group>
+                                    
+                                    <Text size="xs" c="orange" fw={500} mb={2}>
+                                      🔧 {new Date(visit.horaVisita).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                                    </Text>
+                                    
+                                    <Text size="xs" c="dimmed" lineClamp={1}>
+                                      <IconMapPin size={12} style={{ display: "inline", marginRight: 4 }} />
+                                      {visit.direccion}
+                                    </Text>
+                                    
+                                    {visit.assignedUser && (
+                                      <Text size="xs" c="dimmed" mt={2}>
+                                        <IconUser size={12} style={{ display: "inline", marginRight: 4 }} />
+                                        {visit.assignedUser.name}
+                                      </Text>
+                                    )}
+                                  </Paper>
+                                ))}
+                              </Stack>
+                            ) : (
+                              <Text size="xs" c="dimmed" ta="center" py="sm">
+                                No hay visitas este día
                               </Text>
-                            </Group>
-                            <Group gap="xs" mb="xs">
-                              <IconMapPin size={14} className="text-gray-400" />
-                              <Text size="xs" c="dimmed" lineClamp={1}>
-                                {visit.direccion}
-                              </Text>
-                            </Group>
-                            {visit.assignedUser && (
-                              <Group gap="xs">
-                                <IconUser size={14} className="text-gray-400" />
-                                <Text size="xs" c="dimmed">
-                                  Asignado a: {visit.assignedUser.name}
-                                </Text>
-                              </Group>
                             )}
                           </Paper>
-                        ))}
+                        )}
                       </Stack>
                     ) : (
-                      <Center h={300}>
-                        <Stack align="center" gap="sm">
-                          <IconTool size={48} className="text-gray-300" stroke={1.5} />
-                          <Text c="dimmed">No hay visitas próximas</Text>
-                        </Stack>
-                      </Center>
+                      <ScrollArea h={400}>
+                        {upcomingVisits && upcomingVisits.length > 0 ? (
+                          <Stack gap="sm">
+                            {upcomingVisits.map((visit: any) => (
+                              <Paper
+                                key={visit.id}
+                                p="md"
+                                withBorder
+                                radius="md"
+                                className="hover:shadow-md transition-shadow cursor-pointer"
+                                onClick={() => router.push('/technical-visits')}
+                              >
+                                <Group justify="space-between" mb="xs">
+                                  <Group gap="xs">
+                                    <ThemeIcon
+                                      size="sm"
+                                      radius="md"
+                                      color={getStatusColor(visit.estado)}
+                                      variant="light"
+                                    >
+                                      {getStatusIcon(visit.estado)}
+                                    </ThemeIcon>
+                                    <Text fw={600} size="sm">{visit.nombreCliente}</Text>
+                                  </Group>
+                                  <Badge size="sm" color={getStatusColor(visit.estado)}>
+                                    {visit.estado}
+                                  </Badge>
+                                </Group>
+                                
+                                <Divider my="xs" label="🔧 Visita Técnica" labelPosition="left" size="xs" />
+                                <Group gap="xs" mb="xs">
+                                  <IconCalendarEvent size={14} className="text-orange-500" />
+                                  <Text size="xs" c="orange" fw={500}>
+                                    {formatDate(visit.fechaVisita)} - {formatTime(visit.horaVisita)}
+                                  </Text>
+                                </Group>
+                                
+                                <Group gap="xs" mb="xs">
+                                  <IconMapPin size={14} className="text-gray-400" />
+                                  <Text size="xs" c="dimmed" lineClamp={1}>
+                                    {visit.direccion}
+                                  </Text>
+                                </Group>
+                                
+                                {visit.assignedUser && (
+                                  <Group gap="xs">
+                                    <IconUser size={14} className="text-gray-400" />
+                                    <Text size="xs" c="dimmed">
+                                      Asignado a: {visit.assignedUser.name}
+                                    </Text>
+                                  </Group>
+                                )}
+                              </Paper>
+                            ))}
+                          </Stack>
+                        ) : (
+                          <Center h={300}>
+                            <Stack align="center" gap="sm">
+                              <IconTool size={48} className="text-gray-300" stroke={1.5} />
+                              <Text c="dimmed">No hay visitas próximas</Text>
+                            </Stack>
+                          </Center>
+                        )}
+                      </ScrollArea>
                     )}
-                  </ScrollArea>
+                  </Stack>
                 </Card>
               </Grid.Col>
             </Grid>

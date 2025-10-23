@@ -116,18 +116,27 @@ export const dashboardRouter = createTRPCRouter({
   // Obtener próximos eventos (calendario)
   getUpcomingEvents: protectedProcedure.query(async ({ ctx }) => {
     const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(now.getDate() + 30);
+    now.setHours(0, 0, 0, 0); // Inicio del día actual
 
     return ctx.db.event.findMany({
       where: {
-        startDate: {
-          gte: now,
-          lte: thirtyDaysFromNow,
-        },
         estado: {
           not: "CANCELADO",
         },
+        OR: [
+          // Eventos que empiezan hoy o en el futuro
+          {
+            startDate: {
+              gte: now,
+            },
+          },
+          // Eventos que ya empezaron pero aún no terminan
+          {
+            endDate: {
+              gte: now,
+            },
+          },
+        ],
       },
       orderBy: { startDate: "asc" },
       select: {
@@ -138,6 +147,8 @@ export const dashboardRouter = createTRPCRouter({
         estado: true,
         direccion: true,
         montoTotal: true,
+        horaInicio: true,
+        horaTermino: true,
       },
     });
   }),

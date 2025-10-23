@@ -26,7 +26,6 @@ import {
   Divider,
   Paper,
   ThemeIcon,
-  ScrollArea,
 } from "@mantine/core";
 import {
   IconPlus,
@@ -723,8 +722,9 @@ export default function EventosPage() {
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 6 }}>
                   <DateTimePicker
-                    label="Fecha y Hora de Inicio"
-                    placeholder="Selecciona fecha y hora"
+                    label="Inicio del Evento"
+                    description="Fecha y hora en que comienza el evento/celebración"
+                    placeholder="¿Cuándo empieza el evento?"
                     required
                     valueFormat="DD/MM/YYYY HH:mm"
                     {...form.getInputProps("startDate")}
@@ -732,8 +732,9 @@ export default function EventosPage() {
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 6 }}>
                   <DateTimePicker
-                    label="Fecha y Hora de Término"
-                    placeholder="Selecciona fecha y hora"
+                    label="Fin del Evento"
+                    description="Fecha y hora en que termina el evento/celebración"
+                    placeholder="¿Cuándo termina el evento?"
                     required
                     valueFormat="DD/MM/YYYY HH:mm"
                     {...form.getInputProps("endDate")}
@@ -741,8 +742,9 @@ export default function EventosPage() {
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 6 }}>
                   <DateTimePicker
-                    label="Hora de Montaje"
-                    placeholder="Selecciona hora"
+                    label="Fecha y Hora de Montaje"
+                    description="Cuándo se armará/instalará la carpa"
+                    placeholder="¿Cuándo montar la carpa?"
                     required
                     valueFormat="DD/MM/YYYY HH:mm"
                     {...form.getInputProps("horaInicio")}
@@ -750,8 +752,9 @@ export default function EventosPage() {
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 6 }}>
                   <DateTimePicker
-                    label="Hora de Desmontaje"
-                    placeholder="Selecciona hora"
+                    label="Fecha y Hora de Desmontaje"
+                    description="Cuándo se desarmará/retirará la carpa"
+                    placeholder="¿Cuándo desmontar la carpa?"
                     required
                     valueFormat="DD/MM/YYYY HH:mm"
                     {...form.getInputProps("horaTermino")}
@@ -903,8 +906,7 @@ export default function EventosPage() {
         size="xl"
       >
         {selectedEvent && (
-          <ScrollArea h={600}>
-            <Stack gap="lg">
+          <Stack gap="lg">
               {/* Información del Cliente */}
               <Paper p="md" withBorder radius="md" className="bg-gray-50">
                 <Group mb="md">
@@ -961,11 +963,16 @@ export default function EventosPage() {
                     Fechas y Horarios
                   </Text>
                 </Group>
-                <Grid>
+                
+                <Divider my="xs" label="🎉 Fechas del Evento" labelPosition="left" />
+                <Grid mb="md">
                   <Grid.Col span={{ base: 12, sm: 6 }}>
                     <div>
                       <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                        Fecha de Inicio
+                        Inicio del Evento
+                      </Text>
+                      <Text size="xs" c="dimmed" mb={4}>
+                        Cuando comienza la celebración
                       </Text>
                       <Text size="md" fw={500}>
                         {new Date(selectedEvent.startDate).toLocaleDateString(
@@ -973,17 +980,10 @@ export default function EventosPage() {
                           { weekday: "long", year: "numeric", month: "long", day: "numeric" }
                         )}
                       </Text>
-                    </div>
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 6 }}>
-                    <div>
-                      <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                        Fecha de Término
-                      </Text>
-                      <Text size="md" fw={500}>
-                        {new Date(selectedEvent.endDate).toLocaleDateString(
+                      <Text size="md">
+                        {new Date(selectedEvent.startDate).toLocaleTimeString(
                           "es-CL",
-                          { weekday: "long", year: "numeric", month: "long", day: "numeric" }
+                          { hour: "2-digit", minute: "2-digit" }
                         )}
                       </Text>
                     </div>
@@ -991,7 +991,42 @@ export default function EventosPage() {
                   <Grid.Col span={{ base: 12, sm: 6 }}>
                     <div>
                       <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                        Hora de Montaje
+                        Fin del Evento
+                      </Text>
+                      <Text size="xs" c="dimmed" mb={4}>
+                        Cuando termina la celebración
+                      </Text>
+                      <Text size="md" fw={500}>
+                        {new Date(selectedEvent.endDate).toLocaleDateString(
+                          "es-CL",
+                          { weekday: "long", year: "numeric", month: "long", day: "numeric" }
+                        )}
+                      </Text>
+                      <Text size="md">
+                        {new Date(selectedEvent.endDate).toLocaleTimeString(
+                          "es-CL",
+                          { hour: "2-digit", minute: "2-digit" }
+                        )}
+                      </Text>
+                    </div>
+                  </Grid.Col>
+                </Grid>
+                
+                <Divider my="xs" label="🏗️ Montaje y Desmontaje" labelPosition="left" />
+                <Grid>
+                  <Grid.Col span={{ base: 12, sm: 6 }}>
+                    <div>
+                      <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
+                        Fecha y Hora de Montaje
+                      </Text>
+                      <Text size="xs" c="dimmed" mb={4}>
+                        Cuando armar/instalar la carpa
+                      </Text>
+                      <Text size="md" fw={500}>
+                        {new Date(selectedEvent.horaInicio).toLocaleDateString(
+                          "es-CL",
+                          { weekday: "long", year: "numeric", month: "long", day: "numeric" }
+                        )}
                       </Text>
                       <Text size="md">
                         {new Date(selectedEvent.horaInicio).toLocaleTimeString(
@@ -1004,7 +1039,16 @@ export default function EventosPage() {
                   <Grid.Col span={{ base: 12, sm: 6 }}>
                     <div>
                       <Text size="xs" c="dimmed" tt="uppercase" fw={600}>
-                        Hora de Desmontaje
+                        Fecha y Hora de Desmontaje
+                      </Text>
+                      <Text size="xs" c="dimmed" mb={4}>
+                        Cuando desarmar/retirar la carpa
+                      </Text>
+                      <Text size="md" fw={500}>
+                        {new Date(selectedEvent.horaTermino).toLocaleDateString(
+                          "es-CL",
+                          { weekday: "long", year: "numeric", month: "long", day: "numeric" }
+                        )}
                       </Text>
                       <Text size="md">
                         {new Date(selectedEvent.horaTermino).toLocaleTimeString(
@@ -1314,7 +1358,6 @@ export default function EventosPage() {
                 </Button>
               </Group>
             </Stack>
-          </ScrollArea>
         )}
       </Modal>
 

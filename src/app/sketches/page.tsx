@@ -58,6 +58,8 @@ interface ShapeElement {
   strokeWidth?: number;
 }
 
+const AUTOSAVE_KEY = "sketch_autosave_draft";
+
 export default function SketchesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -72,6 +74,8 @@ export default function SketchesPage() {
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [loadModalOpen, setLoadModalOpen] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(eventIdFromUrl);
+  const [hasDraft, setHasDraft] = useState(false);
+  const [showDraftNotification, setShowDraftNotification] = useState(false);
 
   const utils = api.useUtils();
   const { data: sketches, isLoading: loadingSketches } = api.sketch.getAll.useQuery();
@@ -86,6 +90,9 @@ export default function SketchesPage() {
       });
       setSaveModalOpen(false);
       void utils.sketch.getAll.invalidate();
+      // Limpiar el autoguardado
+      localStorage.removeItem(AUTOSAVE_KEY);
+      setHasDraft(false);
     },
     onError: (error) => {
       notifications.show({
@@ -104,6 +111,9 @@ export default function SketchesPage() {
         color: "green",
       });
       void utils.sketch.getAll.invalidate();
+      // Limpiar el autoguardado
+      localStorage.removeItem(AUTOSAVE_KEY);
+      setHasDraft(false);
     },
     onError: (error) => {
       notifications.show({
@@ -134,6 +144,10 @@ export default function SketchesPage() {
       setCurrentSketchId(sketch.id);
       setSelectedEventId(sketch.eventId?.toString() || null);
       setLoadModalOpen(false);
+      // Limpiar el draft al cargar un boceto guardado
+      localStorage.removeItem(AUTOSAVE_KEY);
+      setHasDraft(false);
+      setShowDraftNotification(false);
       notifications.show({
         title: "Éxito",
         message: "Boceto cargado correctamente",
@@ -158,6 +172,81 @@ export default function SketchesPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sketchIdFromUrl, sketches, loadingSketches]);
+
+  // Verificar si hay un draft guardado al cargar
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(AUTOSAVE_KEY);
+    if (savedDraft && !sketchIdFromUrl) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        // Solo mostrar banner si hay elementos guardados
+        if (draft.elements && draft.elements.length > 0) {
+          setHasDraft(true);
+          setShowDraftNotification(true);
+        }
+      } catch (error) {
+        console.error("Error al cargar el borrador:", error);
+        localStorage.removeItem(AUTOSAVE_KEY);
+      }
+    }
+  }, [sketchIdFromUrl]);
+
+  // Autoguardar cada vez que cambien los elementos (con debounce)
+  useEffect(() => {
+    if (elements.length > 0) {
+      const timer = setTimeout(() => {
+        const draft = {
+          elements,
+          sketchName,
+          sketchDescription,
+          currentSketchId,
+          selectedEventId,
+          timestamp: new Date().toISOString(),
+        };
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(draft));
+        setHasDraft(true);
+      }, 2000); // Guardar 2 segundos después del último cambio
+
+      return () => clearTimeout(timer);
+    }
+  }, [elements, sketchName, sketchDescription, currentSketchId, selectedEventId]);
+
+  const restoreDraft = () => {
+    const savedDraft = localStorage.getItem(AUTOSAVE_KEY);
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        setElements(draft.elements || []);
+        setSketchName(draft.sketchName || "");
+        setSketchDescription(draft.sketchDescription || "");
+        setCurrentSketchId(draft.currentSketchId || null);
+        setSelectedEventId(draft.selectedEventId || null);
+        setShowDraftNotification(false);
+        notifications.show({
+          title: "Borrador restaurado",
+          message: "Se ha recuperado tu trabajo anterior",
+          color: "green",
+        });
+      } catch (error) {
+        notifications.show({
+          title: "Error",
+          message: "No se pudo restaurar el borrador",
+          color: "red",
+        });
+      }
+    }
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    setHasDraft(false);
+    setShowDraftNotification(false);
+    notifications.show({
+      title: "Borrador descartado",
+      message: "El borrador ha sido eliminado",
+      color: "gray",
+    });
+  };
 
   const handleSave = () => {
     if (!sketchName.trim()) {
@@ -190,12 +279,17 @@ export default function SketchesPage() {
   };
 
   const handleNew = () => {
+    if (elements.length > 0 && !window.confirm("¿Estás seguro de crear un nuevo boceto? Los cambios no guardados se perderán.")) {
+      return;
+    }
     setElements([]);
     setSketchName("");
     setSketchDescription("");
     setCurrentSketchId(null);
     setSelectedEventId(null);
     setSelectedId(null);
+    localStorage.removeItem(AUTOSAVE_KEY);
+    setHasDraft(false);
   };
 
   return (
@@ -211,7 +305,7 @@ export default function SketchesPage() {
           </ActionIcon>
           <div>
             <Group gap="sm" align="center">
-              <Title order={2}>Bocetos de Carpas</Title>
+              <Title order={2}>Cuaderno Digital de Carpas Guajardo</Title>
               {currentSketchId && sketchName && (
                   <MantineText size="sm" fw={500} c="blue.7">
                     Editando: {sketchName}
@@ -249,6 +343,39 @@ export default function SketchesPage() {
           </Button>
         </Group>
       </Group>
+
+      {/* Alerta de borrador guardado */}
+      {showDraftNotification && (
+        <Paper p="md" mb="md" withBorder bg="blue.0" style={{ borderColor: "#228be6" }}>
+          <Group justify="space-between" align="center">
+            <div>
+              <MantineText fw={600} size="sm" c="blue.9">
+                🔄 Borrador encontrado
+              </MantineText>
+              <MantineText size="xs" c="dimmed">
+                Hay cambios sin guardar del {hasDraft && localStorage.getItem(AUTOSAVE_KEY) 
+                  ? new Date(JSON.parse(localStorage.getItem(AUTOSAVE_KEY)!).timestamp).toLocaleString("es-CL")
+                  : "último trabajo"}
+              </MantineText>
+            </div>
+            <Group gap="xs">
+              <Button size="xs" onClick={restoreDraft} color="blue">
+                Restaurar Borrador
+              </Button>
+              <Button size="xs" onClick={discardDraft} variant="subtle" color="gray">
+                Descartar
+              </Button>
+            </Group>
+          </Group>
+        </Paper>
+      )}
+
+      {/* Indicador de autoguardado */}
+      {hasDraft && elements.length > 0 && (
+        <MantineText size="xs" c="dimmed" mb="xs" ta="right">
+          💾 Autoguardado localmente
+        </MantineText>
+      )}
 
       <SketchEditor
         elements={elements}
