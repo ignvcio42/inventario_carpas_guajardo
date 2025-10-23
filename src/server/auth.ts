@@ -7,12 +7,11 @@ import {
 import { type Adapter } from "next-auth/adapters";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { z } from "zod";
 import bcrypt from "bcryptjs";
 
 import { env } from "~/env";
 import { db } from "~/server/db";
-import { Role } from "@prisma/client";
+import type { Role } from "@prisma/client";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -63,7 +62,7 @@ export const authOptions: NextAuthOptions = {
         // In production, you should hash passwords properly
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
-          user.password || ""
+          user.password ?? ""
         );
 
         if (!isPasswordValid) {

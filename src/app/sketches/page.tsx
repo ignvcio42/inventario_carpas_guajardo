@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import dynamic from "next/dynamic";
 import {
   Container,
@@ -60,7 +60,7 @@ interface ShapeElement {
 
 const AUTOSAVE_KEY = "sketch_autosave_draft";
 
-export default function SketchesPage() {
+function SketchesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventIdFromUrl = searchParams.get("eventId");
@@ -494,5 +494,17 @@ export default function SketchesPage() {
         )}
       </Modal>
     </Container>
+  );
+}
+
+export default function SketchesPage() {
+  return (
+    <Suspense fallback={
+      <Center style={{ minHeight: '100vh' }}>
+        <Loader size="xl" />
+      </Center>
+    }>
+      <SketchesPageContent />
+    </Suspense>
   );
 }

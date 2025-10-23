@@ -91,7 +91,7 @@ export default function SignUp() {
         }
       } else {
         const errorData = await response.json();
-        setError(errorData.message || "Error al crear usuario");
+        setError(errorData.message ?? "Error al crear usuario");
       }
     } catch (error) {
       setError("Error al crear usuario");

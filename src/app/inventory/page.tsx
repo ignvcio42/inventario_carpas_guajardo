@@ -484,7 +484,7 @@ export default function InventoryPage() {
                 <Text size="xs" c="dimmed">
                   <strong>Opción 1 - Solo nombre y cantidad:</strong>
                   <br />
-                  Nombre: <code>Sillas plegables</code> + Cantidad: 30 → Resultado: <strong>"30"</strong>
+                  Nombre: <code>Sillas plegables</code> + Cantidad: 30 → Resultado: <strong>&quot;30&quot;</strong>
                   <br />
                   <em>(El nombre ya indica que son sillas)</em>
                   <br />
@@ -493,14 +493,14 @@ export default function InventoryPage() {
                   <br />
                   Nombre: <code>Vigas de acero</code> + Unidad: <code>vigas de 10mt</code> + Cantidad: 40
                   <br />
-                  → Resultado: <strong>"40 vigas de 10mt"</strong>
+                  → Resultado: <strong>&quot;40 vigas de 10mt&quot;</strong>
                   <br />
                   <br />
                   <strong>Opción 3 - Medidas:</strong>
                   <br />
                   Nombre: <code>Tela blanca</code> + Unidad: <code>metros</code> + Cantidad: 100
                   <br />
-                  → Resultado: <strong>"100 metros"</strong>
+                  → Resultado: <strong>&quot;100 metros&quot;</strong>
                 </Text>
               </Paper>
             )}
