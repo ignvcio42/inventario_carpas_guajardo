@@ -1,3 +1,42 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Mantine CSS Variables */
+:root {
+  --mantine-color-indigo-0: #eef2ff;
+  --mantine-color-indigo-1: #e0e7ff;
+  --mantine-color-indigo-2: #c7d2fe;
+  --mantine-color-indigo-3: #a5b4fc;
+  --mantine-color-indigo-4: #818cf8;
+  --mantine-color-indigo-5: #6366f1;
+  --mantine-color-indigo-6: #4f46e5;
+  --mantine-color-indigo-7: #4338ca;
+  --mantine-color-indigo-8: #3730a3;
+  --mantine-color-indigo-9: #312e81;
+}
+
+/* Ensure Mantine components work well with Tailwind */
+.mantine-AppShell-root {
+  height: 100vh;
+}
+
+.mantine-Navbar-root {
+  background-color: white;
+}
+
+/* Custom styles for better integration */
+.border-dashed {
+  border-style: dashed !important;
+}
+
+/* Ensure proper spacing and layout */
+.mantine-Stack-root {
+  gap: var(--mantine-spacing-md);
+}
+
+/* Custom hover effects that work with both systems */
+.hover-indigo:hover {
+  border-color: var(--mantine-color-indigo-5);
+  background-color: var(--mantine-color-indigo-0);
+}
