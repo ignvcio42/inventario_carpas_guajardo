@@ -5,6 +5,23 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import bcrypt from "bcryptjs";
+import { 
+  Paper, 
+  TextInput, 
+  PasswordInput, 
+  Button, 
+  Title, 
+  Text, 
+  Stack, 
+  Divider, 
+  Group,
+  Alert,
+  Center,
+  Box,
+  Grid,
+  ThemeIcon
+} from '@mantine/core';
+import { IconBrandGoogle, IconAlertCircle, IconCalendarEvent, IconShield, IconUserPlus } from '@tabler/icons-react';
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -88,147 +105,237 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Crear Cuenta
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sistema de Inventario de Carpas
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Nombre completo
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Tu nombre completo"
-                value={formData.name}
-                onChange={handleChange}
-              />
+    <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 overflow-hidden">
+      <Grid className="h-screen" gutter={0} style={{ margin: 0 }}>
+        {/* Lado izquierdo - Imagen y branding */}
+        <Grid.Col span={{ base: 0, md: 6 }} className="hidden md:block" style={{ height: '100vh' }}>
+          <div className="h-full bg-gradient-to-br from-emerald-600 to-teal-700 flex flex-col justify-center items-center p-12 text-white relative overflow-hidden">
+            {/* Patrón de fondo */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-20 left-20 w-32 h-32 bg-white rounded-full"></div>
+              <div className="absolute bottom-20 right-20 w-24 h-24 bg-white rounded-full"></div>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-white rounded-full"></div>
             </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="tu@email.com"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Contraseña
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Mínimo 6 caracteres"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirmar contraseña
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Repite tu contraseña"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
-            </button>
-          </div>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">O continúa con</span>
+            
+            <div className="relative z-10 text-center max-w-md">
+              <ThemeIcon size={80} radius="xl" color="white" variant="light" className="mx-auto mb-6">
+                <IconUserPlus size={40} color="#059669" />
+              </ThemeIcon>
+              
+              <Title order={1} className="text-white mb-4" size="h2">
+                Únete a Carpas Guajardo
+              </Title>
+              
+              <Text size="lg" className="text-emerald-100 mb-8 leading-relaxed">
+                Comienza tu experiencia profesional en la gestión de eventos. 
+                Accede a herramientas avanzadas y simplifica tu trabajo diario.
+              </Text>
+              
+              <div className="flex justify-center space-x-6">
+                <div className="text-center">
+                  <ThemeIcon size={50} radius="md" color="white" variant="light">
+                    <IconCalendarEvent size={24} color="#059669" />
+                  </ThemeIcon>
+                  <Text size="sm" className="text-emerald-100 mt-2">Eventos</Text>
+                </div>
+                <div className="text-center">
+                  <ThemeIcon size={50} radius="md" color="white" variant="light">
+                    <IconShield size={24} color="#059669" />
+                  </ThemeIcon>
+                  <Text size="sm" className="text-emerald-100 mt-2">Seguridad</Text>
+                </div>
               </div>
             </div>
+          </div>
+        </Grid.Col>
 
-            <div className="mt-6">
-              <button
-                type="button"
-                onClick={handleGoogleSignUp}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                <span className="ml-2">Google</span>
-              </button>
+        {/* Lado derecho - Formulario */}
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <div className="h-full flex items-center justify-center p-8">
+            <div className="w-full max-w-md">
+              {/* Header móvil */}
+              <div className="md:hidden text-center mb-8">
+                <ThemeIcon size={60} radius="xl" color="emerald" variant="light" className="mx-auto mb-4">
+                  <IconUserPlus size={30} />
+                </ThemeIcon>
+                <Title order={2} className="text-gray-900 mb-2">
+                  Carpas Guajardo
+                </Title>
+                <Text size="sm" c="dimmed">
+                  Sistema de Inventario de Carpas
+                </Text>
+              </div>
+
+              <Paper shadow="xl" p="lg" radius="lg" className="bg-white/80 backdrop-blur-sm border border-white/20">
+                <Stack gap="sm">
+                  {/* Logo/Branding */}
+                  <Box ta="center">
+                    <Title order={1} className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600 mb-1" style={{ fontSize: '1.75rem', fontWeight: 800 }}>
+                      Carpas Guajardo
+                    </Title>
+                    <Text size="xs" c="dimmed" tt="uppercase" fw={600} style={{ letterSpacing: '0.1em' }}>
+                      Sistema de Gestión
+                    </Text>
+                  </Box>
+
+                  <Box ta="center" mt="xs">
+                    <Title order={2} className="text-gray-900 mb-1">
+                      Crear cuenta
+                    </Title>
+                    <Text size="sm" c="dimmed">
+                      Únete a nuestro sistema profesional
+                    </Text>
+                  </Box>
+
+                  <form onSubmit={handleSubmit}>
+                    <Stack gap="sm">
+                      <TextInput
+                        label="Nombre completo"
+                        placeholder="Tu nombre completo"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        size="sm"
+                        styles={{
+                          input: {
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            '&:focus': {
+                              borderColor: '#059669',
+                              boxShadow: '0 0 0 3px rgba(5, 150, 105, 0.1)',
+                            }
+                          }
+                        }}
+                      />
+
+                      <TextInput
+                        label="Email"
+                        placeholder="tu@email.com"
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        size="sm"
+                        styles={{
+                          input: {
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            '&:focus': {
+                              borderColor: '#059669',
+                              boxShadow: '0 0 0 3px rgba(5, 150, 105, 0.1)',
+                            }
+                          }
+                        }}
+                      />
+
+                      <PasswordInput
+                        label="Contraseña"
+                        placeholder="Mínimo 6 caracteres"
+                        required
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        size="sm"
+                        styles={{
+                          input: {
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            '&:focus': {
+                              borderColor: '#059669',
+                              boxShadow: '0 0 0 3px rgba(5, 150, 105, 0.1)',
+                            }
+                          }
+                        }}
+                      />
+
+                      <PasswordInput
+                        label="Confirmar contraseña"
+                        placeholder="Repite tu contraseña"
+                        required
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                        size="sm"
+                        styles={{
+                          input: {
+                            borderRadius: '8px',
+                            border: '1px solid #e2e8f0',
+                            '&:focus': {
+                              borderColor: '#059669',
+                              boxShadow: '0 0 0 3px rgba(5, 150, 105, 0.1)',
+                            }
+                          }
+                        }}
+                      />
+
+                      {error && (
+                        <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light" radius="md">
+                          {error}
+                        </Alert>
+                      )}
+
+                      <Button
+                        type="submit"
+                        fullWidth
+                        size="sm"
+                        loading={isLoading}
+                        disabled={isLoading}
+                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all duration-200"
+                        styles={{
+                          root: {
+                            borderRadius: '8px',
+                            height: '38px',
+                            fontWeight: 500,
+                          }
+                        }}
+                      >
+                        {isLoading ? "Creando cuenta..." : "Crear Cuenta"}
+                      </Button>
+                    </Stack>
+                  </form>
+
+                  <Divider label="O continúa con" labelPosition="center" />
+
+                  <Button
+                    variant="outline"
+                    fullWidth
+                    size="sm"
+                    leftSection={<IconBrandGoogle size={16} />}
+                    onClick={handleGoogleSignUp}
+                    styles={{
+                      root: {
+                        borderRadius: '8px',
+                        height: '38px',
+                        borderColor: '#e2e8f0',
+                        '&:hover': {
+                          borderColor: '#059669',
+                          backgroundColor: '#f8fafc',
+                        }
+                      }
+                    }}
+                  >
+                    Continuar con Google
+                  </Button>
+
+                  <Center>
+                    <Text size="sm" c="dimmed">
+                      ¿Ya tienes cuenta?{" "}
+                      <Text
+                        component={Link}
+                        href="/auth/signin"
+                        c="emerald"
+                        fw={500}
+                        td="none"
+                        className="hover:underline"
+                      >
+                        Inicia sesión aquí
+                      </Text>
+                    </Text>
+                  </Center>
+                </Stack>
+              </Paper>
             </div>
           </div>
-
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              ¿Ya tienes cuenta?{" "}
-              <Link
-                href="/auth/signin"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Inicia sesión aquí
-              </Link>
-            </p>
-          </div>
-        </form>
-      </div>
+        </Grid.Col>
+      </Grid>
     </div>
   );
 }

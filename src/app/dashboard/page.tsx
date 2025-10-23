@@ -152,8 +152,6 @@ export default function Dashboard() {
     
     return upcomingEvents
       .map((event) => {
-        const startDate = getLocalDate(event.startDate);
-        const endDate = getLocalDate(event.endDate);
         const montajeDate = getLocalDate(event.horaInicio);
         const desmonteDate = getLocalDate(event.horaTermino);
         
@@ -162,11 +160,6 @@ export default function Dashboard() {
         // Verificar si es día de montaje
         if (checkDate.getTime() === montajeDate.getTime()) {
           types.push('montaje');
-        }
-        
-        // Verificar si es día del evento
-        if (checkDate >= startDate && checkDate <= endDate) {
-          types.push('evento');
         }
         
         // Verificar si es día de desmontaje
@@ -398,7 +391,7 @@ export default function Dashboard() {
                         <ThemeIcon size="md" radius="md" color="blue" variant="light">
                           <IconCalendarEvent size={18} />
                         </ThemeIcon>
-                        <Title order={3} className="text-gray-900">Próximos Eventos</Title>
+                        <Title order={3} className="text-gray-900">Montajes y Desmontajes</Title>
                       </Group>
                       <Group gap="xs">
                         <SegmentedControl

@@ -26,6 +26,7 @@ import {
   Divider,
   Paper,
   ThemeIcon,
+  Tooltip,
 } from "@mantine/core";
 import {
   IconPlus,
@@ -93,6 +94,16 @@ export default function EventosPage() {
     { eventId: selectedEvent?.id || 0 },
     { enabled: !!selectedEvent?.id }
   );
+
+  // Función helper para formatear fechas en español
+  const formatDateForTooltip = (date: Date | string) => {
+    const dateObj = new Date(date);
+    return dateObj.toLocaleDateString("es-CL", {
+      weekday: "long",
+      day: "numeric",
+      month: "long"
+    });
+  };
   const { data: unassignedSketches } = api.sketch.getUnassigned.useQuery();
   const createEvent = api.event.create.useMutation();
   const updateEvent = api.event.update.useMutation();
@@ -484,7 +495,9 @@ export default function EventosPage() {
                       <Table.Tr>
                         <Table.Th>Cliente</Table.Th>
                         <Table.Th>Dirección</Table.Th>
-                        <Table.Th>Fecha Inicio</Table.Th>
+                        <Table.Th>Fecha Inicio Evento</Table.Th>
+                        <Table.Th>Fecha Inicio Montaje</Table.Th>
+                        <Table.Th>Fecha Fin Montaje</Table.Th>
                         <Table.Th>Monto Total</Table.Th>
                         <Table.Th>Estado</Table.Th>
                         <Table.Th>Acciones</Table.Th>
@@ -509,11 +522,31 @@ export default function EventosPage() {
                             </Text>
                           </Table.Td>
                           <Table.Td>
-                            <Text size="sm">
-                              {new Date(event.startDate).toLocaleDateString(
-                                "es-CL"
-                              )}
-                            </Text>
+                            <Tooltip label={formatDateForTooltip(event.startDate)} position="top">
+                              <Text size="sm" style={{ cursor: "help" }}>
+                                {new Date(event.startDate).toLocaleDateString(
+                                  "es-CL"
+                                )}
+                              </Text>
+                            </Tooltip>
+                          </Table.Td>
+                          <Table.Td>
+                            <Tooltip label={formatDateForTooltip(event.horaInicio)} position="top">
+                              <Text size="sm" style={{ cursor: "help" }}>
+                                {new Date(event.horaInicio).toLocaleDateString(
+                                  "es-CL"
+                                )}
+                              </Text>
+                            </Tooltip>
+                          </Table.Td>
+                          <Table.Td>
+                            <Tooltip label={formatDateForTooltip(event.horaTermino)} position="top">
+                              <Text size="sm" style={{ cursor: "help" }}>
+                                {new Date(event.horaTermino).toLocaleDateString(
+                                  "es-CL"
+                                )}
+                              </Text>
+                            </Tooltip>
                           </Table.Td>
                           <Table.Td>
                             <Text size="sm" fw={500}>

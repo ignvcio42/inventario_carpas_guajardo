@@ -27,6 +27,9 @@ import {
   IconX,
   IconShield,
   IconPencil,
+  IconUser,
+  IconHammer,
+  IconCurrencyDollar,
 } from '@tabler/icons-react';
 import { api } from "~/trpc/react";
 
@@ -35,13 +38,22 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: any;
+  badge?: number;
+  disabled?: boolean;
+  underConstruction?: boolean;
+}
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const { data: unreadCount } = api.notification.getUnreadCount.useQuery();
   const { data: isAdmin } = api.admin.isAdmin.useQuery();
 
-  const navigation = [
+  const navigation: NavigationItem[] = [
     { name: "Dashboard", href: "/dashboard", icon: IconDashboard },
     { name: "Eventos", href: "/eventos", icon: IconCalendarEvent },
     { name: "Visitas Técnicas", href: "/technical-visits", icon: IconTool },
@@ -49,8 +61,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Bocetos", href: "/sketches", icon: IconPencil },
     { name: "Notificaciones", href: "/notifications", icon: IconBell, badge: unreadCount },
     ...(isAdmin ? [{ name: "Panel Admin", href: "/admin", icon: IconShield }] : []),
+    { name: "Clientes", href: "/clientes", icon: IconUser, disabled: true, underConstruction: true },
+    { name: "Cotizaciones", href: "/cotizaciones", icon: IconCurrencyDollar, disabled: true, underConstruction: true },
     { name: "Configuración", href: "/settings", icon: IconSettings },
-  ];
+  ] as NavigationItem[];
 
   const handleSignOut = () => {
     signOut({ callbackUrl: "/auth/signin" });
@@ -119,7 +133,51 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 const isActive = pathname === item.href;
                 const IconComponent = item.icon;
                 const showBadge = item.badge && Number(item.badge) > 0;
+                const isDisabled = item.disabled;
+                const isUnderConstruction = item.underConstruction;
                 
+                if (isDisabled) {
+                  return (
+                    <Box
+                      key={item.name}
+                      className="mb-1 p-2 rounded-md opacity-60 cursor-not-allowed"
+                      style={{
+                        borderRadius: '6px',
+                      }}
+                    >
+                      <Group>
+                        {showBadge ? (
+                          <Indicator color="red" size={8} processing>
+                            <IconComponent size={16} color="#9ca3af" />
+                          </Indicator>
+                        ) : (
+                          <IconComponent size={16} color="#9ca3af" />
+                        )}
+                        <Group justify="space-between" style={{ flex: 1 }}>
+                          <Text size="sm" c="dimmed">
+                            {item.name}
+                          </Text>
+                          <Group gap="xs">
+                            {isUnderConstruction && (
+                              <Badge size="xs" color="orange" variant="light">
+                                <Group gap={4}>
+                                  <IconHammer size={10} />
+                                  <Text size="xs">En construcción</Text>
+                                </Group>
+                              </Badge>
+                            )}
+                            {showBadge && (
+                              <Badge size="xs" color="red" variant="filled" circle>
+                                {item.badge}
+                              </Badge>
+                            )}
+                          </Group>
+                        </Group>
+                      </Group>
+                    </Box>
+                  );
+                }
+
                 return (
                   <NavLink
                     key={item.name}

@@ -58,7 +58,7 @@ model User {
     image         String?
     password      String?
     role          Role        @default(WORKER)
-    avatarUrl     String
+    avatarUrl     String      @default("")
     EventUser     EventUser[]
     accounts      Account[]
     sessions      Session[]
