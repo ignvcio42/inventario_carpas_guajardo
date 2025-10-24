@@ -78,6 +78,7 @@ model User {
     pushSubscriptions PushSubscription[]
     clientes      Cliente[]
     proveedores   Proveedor[]
+    cotizaciones  Cotizacion[]
 }
 
 model VerificationToken {
@@ -324,6 +325,7 @@ model Cliente {
     createdBy     User     @relation(fields: [createdById], references: [id])
     createdById   String
     eventos       Event[]
+    cotizaciones  Cotizacion[]
 
     @@index([nombre])
     @@index([email])
@@ -368,4 +370,68 @@ enum TipoServicio {
     ILUMINACION
     TRANSPORTE
     OTROS
+}
+
+model Cotizacion {
+    id              Int       @id @default(autoincrement())
+    folio           String    @unique
+    atencion        String    // Nombre de contacto
+    empresa         String?
+    clienteId       Int?
+    fechaEvento     DateTime?
+    fechaMontaje    DateTime?
+    fechaDesarme    DateTime?
+    lugarEvento     String?
+    formaPago       String?
+    neto            Decimal   @db.Decimal(12,2)
+    iva             Decimal   @db.Decimal(12,2)
+    bruto           Decimal   @db.Decimal(12,2)
+    estado          EstadoCotizacion @default(BORRADOR)
+    pdfUrl          String?
+    notas           String?
+    createdAt       DateTime  @default(now())
+    updatedAt       DateTime  @updatedAt
+    createdBy       User      @relation(fields: [createdById], references: [id])
+    createdById     String
+    cliente         Cliente?  @relation(fields: [clienteId], references: [id])
+    detalles        CotizacionDetalle[]
+    descripciones   CotizacionDescripcion[]
+
+    @@index([folio])
+    @@index([clienteId])
+    @@index([estado])
+    @@index([createdAt])
+}
+
+model CotizacionDetalle {
+    id            Int         @id @default(autoincrement())
+    cotizacionId  Int
+    detalle       String
+    largo         Decimal     @db.Decimal(10,2)
+    alto          Decimal     @db.Decimal(10,2)
+    totalMts      Decimal     @db.Decimal(10,2)
+    valorM2       Decimal     @db.Decimal(12,2)
+    total         Decimal     @db.Decimal(12,2)
+    orden         Int         @default(0)
+    cotizacion    Cotizacion  @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+
+    @@index([cotizacionId])
+}
+
+model CotizacionDescripcion {
+    id            Int         @id @default(autoincrement())
+    cotizacionId  Int
+    descripcion   String
+    orden         Int         @default(0)
+    cotizacion    Cotizacion  @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+
+    @@index([cotizacionId])
+}
+
+enum EstadoCotizacion {
+    BORRADOR
+    ENVIADA
+    ACEPTADA
+    RECHAZADA
+    VENCIDA
 }

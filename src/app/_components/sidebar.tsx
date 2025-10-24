@@ -77,7 +77,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { name: "Proveedores", href: "/proveedores", icon: IconBuildingStore },
       ]
     },
-    { name: "Cotizaciones", href: "/cotizaciones", icon: IconCurrencyDollar, disabled: true, underConstruction: true },
+    { name: "Cotizaciones", href: "/cotizaciones", icon: IconCurrencyDollar, badge: "BETA" },
   ] as NavigationItem[];
 
   const handleSignOut = () => {
@@ -145,7 +145,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <Box className="px-4 py-4">
               {navigation.map((item) => {
                 const IconComponent = item.icon;
-                const showBadge = item.badge && Number(item.badge) > 0;
+                // Mostrar badge si existe y es: 1) un string, o 2) un número mayor que 0
+                const showBadge = item.badge && (typeof item.badge === 'string' || Number(item.badge) > 0);
+                const isStringBadge = typeof item.badge === 'string';
                 const isDisabled = item.disabled;
                 const isUnderConstruction = item.underConstruction;
                 const hasChildren = item.children && item.children.length > 0;
@@ -279,7 +281,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                               </Badge>
                             )}
                             {showBadge && (
-                              <Badge size="xs" color="red" variant="filled" circle>
+                              <Badge 
+                                size="xs" 
+                                color={isStringBadge ? "blue" : "red"} 
+                                variant={isStringBadge ? "light" : "filled"}
+                                circle={!isStringBadge}
+                              >
                                 {item.badge}
                               </Badge>
                             )}
@@ -299,14 +306,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       <Group justify="space-between" style={{ flex: 1 }}>
                         <Text size="sm">{item.name}</Text>
                         {showBadge && (
-                          <Badge size="xs" color="red" variant="filled" circle>
+                          <Badge 
+                            size="xs" 
+                            color={isStringBadge ? "blue" : "red"} 
+                            variant={isStringBadge ? "light" : "filled"}
+                            circle={!isStringBadge}
+                          >
                             {item.badge}
                           </Badge>
                         )}
                       </Group>
                     }
                     leftSection={
-                      showBadge ? (
+                      showBadge && !isStringBadge ? (
                         <Indicator color="red" size={8} processing>
                           <IconComponent size={16} />
                         </Indicator>

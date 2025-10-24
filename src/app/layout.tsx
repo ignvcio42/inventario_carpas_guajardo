@@ -9,6 +9,7 @@ import AuthProvider from "./_components/auth-provider";
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import PushNotificationSetup from "./_components/push-notification-setup";
+import { Toaster } from "react-hot-toast";
 
 import { TRPCReactProvider } from "~/trpc/react";
 
@@ -43,6 +44,7 @@ export default function RootLayout({
       <body>
         <MantineProvider>
           <Notifications />
+          <Toaster position="top-right" />
           <AuthProvider>
             <TRPCReactProvider>
               {children}

@@ -162,6 +162,8 @@ export default function Dashboard() {
     return upcomingEvents
       .map((event) => {
         const montajeDate = getLocalDate(event.horaInicio);
+        const eventoStartDate = getLocalDate(event.startDate);
+        const eventoEndDate = getLocalDate(event.endDate);
         const desmonteDate = getLocalDate(event.horaTermino);
         
         const types = [];
@@ -169,6 +171,12 @@ export default function Dashboard() {
         // Verificar si es día de montaje
         if (checkDate.getTime() === montajeDate.getTime()) {
           types.push('montaje');
+        }
+        
+        // Verificar si está dentro del rango del evento
+        if (checkDate.getTime() >= eventoStartDate.getTime() && 
+            checkDate.getTime() <= eventoEndDate.getTime()) {
+          types.push('evento');
         }
         
         // Verificar si es día de desmontaje
@@ -325,6 +333,25 @@ export default function Dashboard() {
               </Card>
             </SimpleGrid>
 
+            {/* Info Card - Calendario */}
+            <Paper p="md" radius="md" className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500">
+              <Group gap="sm">
+                <ThemeIcon size="lg" radius="md" color="blue" variant="light">
+                  <IconCalendarEvent size={24} />
+                </ThemeIcon>
+                <div style={{ flex: 1 }}>
+                  <Text fw={600} size="sm" mb={4}>
+                    📅 Nuevo Sistema de Calendario
+                  </Text>
+                  <Text size="xs" c="dimmed">
+                    El calendario ahora muestra claramente las fechas de <strong style={{ color: '#fd7e14' }}>montaje</strong>, 
+                    el <strong style={{ color: '#228be6' }}>evento</strong> y el <strong style={{ color: '#be4bdb' }}>desmontaje</strong> con 
+                    indicadores de colores diferenciados. Haz clic en cualquier día para ver los detalles.
+                  </Text>
+                </div>
+              </Group>
+            </Paper>
+
             {/* Quick Actions */}
             <Card shadow="sm" padding="lg" radius="md" className="bg-white">
               <Title order={3} className="text-gray-900 mb-4">Acciones Rápidas</Title>
@@ -425,6 +452,25 @@ export default function Dashboard() {
 
                     {eventsView === "calendar" ? (
                       <Stack gap="sm">
+                        {/* Leyenda de colores */}
+                        <Paper p="xs" withBorder bg="gray.0">
+                          <Text size="xs" fw={600} mb={6} c="dimmed">Leyenda:</Text>
+                          <Group gap="xs" wrap="wrap">
+                            <Group gap={4}>
+                              <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#fd7e14' }} />
+                              <Text size="xs" c="dimmed">Montaje</Text>
+                            </Group>
+                            <Group gap={4}>
+                              <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#228be6' }} />
+                              <Text size="xs" c="dimmed">Evento</Text>
+                            </Group>
+                            <Group gap={4}>
+                              <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#be4bdb' }} />
+                              <Text size="xs" c="dimmed">Desmontaje</Text>
+                            </Group>
+                          </Group>
+                        </Paper>
+                        
                         {/* Navegación del mes */}
                         <Group justify="space-between" align="center">
                           <ActionIcon variant="subtle" onClick={goToPreviousMonth}>
@@ -478,17 +524,30 @@ export default function Dashboard() {
                                           justifyContent: "center",
                                         }}
                                       >
-                                        {Array.from({ length: Math.min(eventsCount, 3) }).map((_, i) => (
-                                          <div
-                                            key={i}
-                                            style={{
-                                              width: "5px",
-                                              height: "5px",
-                                              borderRadius: "50%",
-                                              backgroundColor: isSelected ? "white" : "#228be6",
-                                            }}
-                                          />
-                                        ))}
+                                        {(() => {
+                                          const dayEvents = getDayEvents(date);
+                                          const allTypes = new Set(dayEvents.flatMap(e => e.types || []));
+                                          const typesArray = Array.from(allTypes);
+                                          
+                                          return typesArray.map((type, i) => {
+                                            let color = "#228be6"; // Azul por defecto
+                                            if (type === 'montaje') color = "#fd7e14"; // Naranja
+                                            if (type === 'evento') color = "#228be6"; // Azul
+                                            if (type === 'desmontaje') color = "#be4bdb"; // Morado
+                                            
+                                            return (
+                                              <div
+                                                key={i}
+                                                style={{
+                                                  width: "6px",
+                                                  height: "6px",
+                                                  borderRadius: "50%",
+                                                  backgroundColor: isSelected ? "white" : color,
+                                                }}
+                                              />
+                                            );
+                                          });
+                                        })()}
                                       </div>
                                     )}
                                   </div>

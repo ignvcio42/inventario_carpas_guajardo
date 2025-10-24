@@ -10,6 +10,7 @@ import { pushRouter } from "~/server/api/routers/push";
 import { profileRouter } from "~/server/api/routers/profile";
 import { clienteRouter } from "~/server/api/routers/cliente";
 import { proveedorRouter } from "~/server/api/routers/proveedor";
+import { cotizacionRouter } from "~/server/api/routers/cotizacion";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -30,6 +31,7 @@ export const appRouter = createTRPCRouter({
   profile: profileRouter,
   cliente: clienteRouter,
   proveedor: proveedorRouter,
+  cotizacion: cotizacionRouter,
 });
 
 // export type definition of API
