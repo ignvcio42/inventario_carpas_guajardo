@@ -59,6 +59,14 @@ model User {
     password      String?
     role          Role        @default(WORKER)
     avatarUrl     String      @default("")
+    phone         String?
+    address       String?
+    bio           String?
+    preferences   Json?       @default("{}")
+    timezone      String?     @default("America/Santiago")
+    language      String?     @default("es")
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @default(now()) @updatedAt
     EventUser     EventUser[]
     accounts      Account[]
     sessions      Session[]
@@ -68,6 +76,8 @@ model User {
     technicalVisits TechnicalEvent[]
     sketches      Sketch[]
     pushSubscriptions PushSubscription[]
+    clientes      Cliente[]
+    proveedores   Proveedor[]
 }
 
 model VerificationToken {
@@ -113,11 +123,13 @@ model Event {
     estado              Estado
     comentario          String?
     technicalVisitId    Int?
+    clienteId           Int?
     createdAt           DateTime    @default(now())
     updatedAt           DateTime    @updatedAt
     createdBy           User        @relation(fields: [createdById], references: [id])
     createdById         String
     technicalVisit      TechnicalEvent? @relation(fields: [technicalVisitId], references: [id])
+    cliente             Cliente?    @relation(fields: [clienteId], references: [id])
     items               EventItem[]
     users               EventUser[]
     movements           StockMovement[]
@@ -295,4 +307,65 @@ enum Estado {
     EN_PROCESO
     COMPLETADO
     CANCELADO
+}
+
+model Cliente {
+    id            Int      @id @default(autoincrement())
+    nombre        String
+    email         String?
+    telefono      String?
+    direccion     String?
+    tipoCliente   TipoCliente @default(PARTICULAR)
+    empresa       String?
+    rut           String?
+    notas         String?
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    createdBy     User     @relation(fields: [createdById], references: [id])
+    createdById   String
+    eventos       Event[]
+
+    @@index([nombre])
+    @@index([email])
+    @@index([tipoCliente])
+}
+
+model Proveedor {
+    id            Int      @id @default(autoincrement())
+    nombre        String
+    email         String?
+    telefono      String?
+    direccion     String?
+    tipoServicio  TipoServicio
+    contacto      String?
+    rut           String?
+    notas         String?
+    activo        Boolean  @default(true)
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    createdBy     User     @relation(fields: [createdById], references: [id])
+    createdById   String
+
+    @@index([nombre])
+    @@index([email])
+    @@index([tipoServicio])
+    @@index([activo])
+}
+
+enum TipoCliente {
+    PARTICULAR
+    EMPRESA
+    ORGANIZACION
+    GOBIERNO
+    EMBAJADA
+}
+
+enum TipoServicio {
+    MOBILIARIO
+    DECORACION
+    CATERING
+    SONIDO
+    ILUMINACION
+    TRANSPORTE
+    OTROS
 }

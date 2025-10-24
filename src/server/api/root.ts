@@ -7,6 +7,9 @@ import { dashboardRouter } from "~/server/api/routers/dashboard";
 import { adminRouter } from "~/server/api/routers/admin";
 import { sketchRouter } from "~/server/api/routers/sketch";
 import { pushRouter } from "~/server/api/routers/push";
+import { profileRouter } from "~/server/api/routers/profile";
+import { clienteRouter } from "~/server/api/routers/cliente";
+import { proveedorRouter } from "~/server/api/routers/proveedor";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -24,6 +27,9 @@ export const appRouter = createTRPCRouter({
   admin: adminRouter,
   sketch: sketchRouter,
   push: pushRouter,
+  profile: profileRouter,
+  cliente: clienteRouter,
+  proveedor: proveedorRouter,
 });
 
 // export type definition of API

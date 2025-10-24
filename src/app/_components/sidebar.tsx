@@ -15,6 +15,8 @@ import {
   ScrollArea,
   Divider,
   Indicator,
+  Collapse,
+  UnstyledButton,
 } from '@mantine/core';
 import { 
   IconDashboard, 
@@ -22,7 +24,6 @@ import {
   IconTool, 
   IconPackage, 
   IconBell, 
-  IconSettings, 
   IconLogout,
   IconX,
   IconShield,
@@ -30,6 +31,10 @@ import {
   IconUser,
   IconHammer,
   IconCurrencyDollar,
+  IconUsers,
+  IconChevronDown,
+  IconChevronRight,
+  IconBuildingStore,
 } from '@tabler/icons-react';
 import { api } from "~/trpc/react";
 
@@ -40,11 +45,12 @@ interface SidebarProps {
 
 interface NavigationItem {
   name: string;
-  href: string;
+  href?: string;
   icon: any;
   badge?: number;
   disabled?: boolean;
   underConstruction?: boolean;
+  children?: NavigationItem[];
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -52,6 +58,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { data: unreadCount } = api.notification.getUnreadCount.useQuery();
   const { data: isAdmin } = api.admin.isAdmin.useQuery();
+  const [contactsOpen, setContactsOpen] = useState(false);
 
   const navigation: NavigationItem[] = [
     { name: "Dashboard", href: "/dashboard", icon: IconDashboard },
@@ -61,9 +68,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Bocetos", href: "/sketches", icon: IconPencil },
     { name: "Notificaciones", href: "/notifications", icon: IconBell, badge: unreadCount },
     ...(isAdmin ? [{ name: "Panel Admin", href: "/admin", icon: IconShield }] : []),
-    { name: "Clientes", href: "/clientes", icon: IconUser, disabled: true, underConstruction: true },
+    { name: "Mi Perfil", href: "/profile", icon: IconUser },
+    { 
+      name: "Contactos", 
+      icon: IconUsers, 
+      children: [
+        { name: "Clientes", href: "/clientes", icon: IconUser },
+        { name: "Proveedores", href: "/proveedores", icon: IconBuildingStore },
+      ]
+    },
     { name: "Cotizaciones", href: "/cotizaciones", icon: IconCurrencyDollar, disabled: true, underConstruction: true },
-    { name: "Configuración", href: "/settings", icon: IconSettings },
   ] as NavigationItem[];
 
   const handleSignOut = () => {
@@ -130,11 +144,107 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           <ScrollArea className="flex-1">
             <Box className="px-4 py-4">
               {navigation.map((item) => {
-                const isActive = pathname === item.href;
                 const IconComponent = item.icon;
                 const showBadge = item.badge && Number(item.badge) > 0;
                 const isDisabled = item.disabled;
                 const isUnderConstruction = item.underConstruction;
+                const hasChildren = item.children && item.children.length > 0;
+                
+                // Si tiene hijos, renderizar como elemento desplegable
+                if (hasChildren) {
+                  const isContactsItem = item.name === "Contactos";
+                  const isOpen = isContactsItem ? contactsOpen : false;
+                  const toggleOpen = isContactsItem ? () => setContactsOpen(!contactsOpen) : () => {};
+                  
+                  return (
+                    <Box key={item.name} className="mb-1">
+                      <UnstyledButton
+                        onClick={toggleOpen}
+                        className="w-full p-2 rounded-md hover:bg-gray-100 transition-colors"
+                        style={{ borderRadius: '6px' }}
+                      >
+                        <Group justify="space-between">
+                          <Group gap="xs">
+                            <IconComponent size={16} />
+                            <Text size="sm">{item.name}</Text>
+                          </Group>
+                          {isOpen ? (
+                            <IconChevronDown size={14} />
+                          ) : (
+                            <IconChevronRight size={14} />
+                          )}
+                        </Group>
+                      </UnstyledButton>
+                      
+                      <Collapse in={isOpen}>
+                        <Box className="ml-4 mt-1">
+                          {item.children?.map((child) => {
+                            const isChildActive = pathname === child.href;
+                            const ChildIconComponent = child.icon;
+                            const isChildDisabled = child.disabled;
+                            const isChildUnderConstruction = child.underConstruction;
+                            
+                            if (isChildDisabled) {
+                              return (
+                                <Box
+                                  key={child.name}
+                                  className="mb-1 p-2 rounded-md opacity-60 cursor-not-allowed"
+                                  style={{ borderRadius: '6px' }}
+                                >
+                                  <Group>
+                                    <ChildIconComponent size={14} color="#9ca3af" />
+                                    <Group justify="space-between" style={{ flex: 1 }}>
+                                      <Text size="xs" c="dimmed">
+                                        {child.name}
+                                      </Text>
+                                      {isChildUnderConstruction && (
+                                        <Badge size="xs" color="orange" variant="light">
+                                          <Group gap={4}>
+                                            <IconHammer size={8} />
+                                            <Text size="xs">En construcción</Text>
+                                          </Group>
+                                        </Badge>
+                                      )}
+                                    </Group>
+                                  </Group>
+                                </Box>
+                              );
+                            }
+                            
+                            return (
+                              <NavLink
+                                key={child.name}
+                                component={Link}
+                                href={child.href!}
+                                label={<Text size="xs">{child.name}</Text>}
+                                leftSection={<ChildIconComponent size={14} />}
+                                active={isChildActive}
+                                onClick={onClose}
+                                className="mb-1"
+                                styles={{
+                                  root: {
+                                    borderRadius: '6px',
+                                    padding: '8px 12px',
+                                    '&[data-active]': {
+                                      backgroundColor: '#e0e7ff',
+                                      color: '#4338ca',
+                                    },
+                                    '&:hover': {
+                                      backgroundColor: '#f9fafb',
+                                    }
+                                  }
+                                }}
+                              />
+                            );
+                          })}
+                        </Box>
+                      </Collapse>
+                    </Box>
+                  );
+                }
+                
+                // Elemento normal sin hijos
+                const isActive = pathname === item.href;
                 
                 if (isDisabled) {
                   return (
@@ -182,7 +292,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <NavLink
                     key={item.name}
                     component={Link}
-                    href={item.href}
+                    href={item.href!}
                     label={
                       <Group justify="space-between" style={{ flex: 1 }}>
                         <Text size="sm">{item.name}</Text>
