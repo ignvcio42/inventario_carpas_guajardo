@@ -63,24 +63,24 @@ export default function CotizacionesPage() {
         <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="flex items-center gap-3 text-3xl font-bold text-gray-900">
-                <div className="rounded-xl bg-blue-500 p-3">
-                  <DocumentTextIcon className="h-8 w-8 text-white" />
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex-1">
+              <h1 className="flex items-center gap-3 text-2xl sm:text-3xl font-bold text-gray-900">
+                <div className="rounded-xl bg-blue-500 p-2 sm:p-3">
+                  <DocumentTextIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
                 </div>
                 Cotizaciones
               </h1>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-2 text-sm sm:text-base text-gray-600">
                 Gestiona las cotizaciones de tus clientes
               </p>
             </div>
             <button
               onClick={() => setShowForm(true)}
-              className="flex items-center gap-2 rounded-xl bg-blue-500 px-6 py-3 font-semibold text-white shadow-lg hover:bg-blue-600 transition-all hover:shadow-xl"
+              className="flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 sm:px-6 sm:py-3 font-semibold text-white shadow-lg hover:bg-blue-600 transition-all hover:shadow-xl w-full sm:w-auto text-sm sm:text-base"
             >
-              <PlusIcon className="h-5 w-5" />
-              Nueva Cotización
+              <PlusIcon className="h-5 w-5 flex-shrink-0" />
+              <span>Nueva Cotización</span>
             </button>
           </div>
         </div>

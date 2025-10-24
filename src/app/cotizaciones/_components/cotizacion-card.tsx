@@ -56,6 +56,92 @@ export function CotizacionCard({ cotizacion, onEdit, onRefresh }: CotizacionCard
     },
   });
 
+  const updateEstadoMutation = api.cotizacion.updateEstado.useMutation({
+    // Actualización optimista
+    onMutate: async (variables) => {
+      // Cancelar queries en progreso
+      await utils.cotizacion.getAll.cancel();
+      await utils.cotizacion.getStats.cancel();
+      
+      // Guardar datos actuales por si necesitamos revertir
+      const previousCotizaciones = utils.cotizacion.getAll.getData({});
+      const previousStats = utils.cotizacion.getStats.getData();
+      
+      // Actualizar optimísticamente las cotizaciones
+      utils.cotizacion.getAll.setData({}, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          cotizaciones: old.cotizaciones.map((cot) =>
+            cot.id === variables.id
+              ? { ...cot, estado: variables.estado }
+              : cot
+          ),
+        };
+      });
+
+      // Actualizar estadísticas optimísticamente
+      utils.cotizacion.getStats.setData(undefined, (old) => {
+        if (!old) return old;
+        
+        const estadoAnterior = cotizacion.estado;
+        const estadoNuevo = variables.estado;
+        const bruto = Number(cotizacion.bruto);
+        
+        // Calcular nuevas estadísticas
+        const newStats = { ...old };
+        
+        // Decrementar estado anterior
+        if (estadoAnterior === "BORRADOR") newStats.borradores = Math.max(0, newStats.borradores - 1);
+        else if (estadoAnterior === "ENVIADA") newStats.enviadas = Math.max(0, newStats.enviadas - 1);
+        else if (estadoAnterior === "ACEPTADA") {
+          newStats.aceptadas = Math.max(0, newStats.aceptadas - 1);
+          newStats.totalBruto = Math.max(0, newStats.totalBruto - bruto);
+        }
+        else if (estadoAnterior === "RECHAZADA") newStats.rechazadas = Math.max(0, newStats.rechazadas - 1);
+        
+        // Incrementar estado nuevo
+        if (estadoNuevo === "BORRADOR") newStats.borradores++;
+        else if (estadoNuevo === "ENVIADA") newStats.enviadas++;
+        else if (estadoNuevo === "ACEPTADA") {
+          newStats.aceptadas++;
+          newStats.totalBruto += bruto;
+        }
+        else if (estadoNuevo === "RECHAZADA") newStats.rechazadas++;
+        
+        return newStats;
+      });
+      
+      return { previousCotizaciones, previousStats };
+    },
+    onSuccess: () => {
+      toast.success("Estado actualizado exitosamente");
+    },
+    onError: (error, _variables, context) => {
+      // Revertir cambios en caso de error
+      if (context?.previousCotizaciones) {
+        utils.cotizacion.getAll.setData({}, context.previousCotizaciones);
+      }
+      if (context?.previousStats) {
+        utils.cotizacion.getStats.setData(undefined, context.previousStats);
+      }
+      toast.error(error.message || "Error al actualizar estado");
+    },
+    onSettled: () => {
+      // Refrescar datos del servidor
+      void utils.cotizacion.getAll.invalidate();
+      void utils.cotizacion.getStats.invalidate();
+      onRefresh();
+    },
+  });
+
+  const handleEstadoChange = (newEstado: string) => {
+    updateEstadoMutation.mutate({
+      id: cotizacion.id,
+      estado: newEstado as "BORRADOR" | "ENVIADA" | "ACEPTADA" | "RECHAZADA" | "VENCIDA",
+    });
+  };
+
   const generarPDFMutation = api.cotizacion.generarPDF.useMutation({
     onSuccess: (data) => {
       // Convertir base64 a blob y descargar
@@ -134,34 +220,45 @@ export function CotizacionCard({ cotizacion, onEdit, onRefresh }: CotizacionCard
       <div className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md">
         {/* Header */}
         <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-white shadow-sm">
-                  <span className="text-lg font-bold text-blue-600">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-white shadow-sm">
+                  <span className="text-base sm:text-lg font-bold text-blue-600">
                     #{cotizacion.folio}
                   </span>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-gray-900 truncate">
                     {cotizacion.atencion}
                   </h3>
                   {cotizacion.empresa && (
-                    <p className="flex items-center gap-1 text-sm text-gray-600">
-                      <BuildingOfficeIcon className="h-4 w-4" />
-                      {cotizacion.empresa}
+                    <p className="flex items-center gap-1 text-sm text-gray-600 truncate">
+                      <BuildingOfficeIcon className="h-4 w-4 flex-shrink-0" />
+                      <span className="truncate">{cotizacion.empresa}</span>
                     </p>
                   )}
                 </div>
               </div>
             </div>
-            <span
-              className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                estadoColors[cotizacion.estado]
-              }`}
-            >
-              {estadoLabels[cotizacion.estado]}
-            </span>
+            
+            {/* Selector de estado responsive */}
+            <div className="w-full sm:w-auto">
+              <select
+                value={cotizacion.estado}
+                onChange={(e) => handleEstadoChange(e.target.value)}
+                disabled={updateEstadoMutation.isPending}
+                className={`w-full sm:w-auto rounded-lg border px-3 py-1.5 text-xs sm:text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  estadoColors[cotizacion.estado]
+                }`}
+              >
+                <option value="BORRADOR">Borrador</option>
+                <option value="ENVIADA">Enviada</option>
+                <option value="ACEPTADA">Aceptada</option>
+                <option value="RECHAZADA">Rechazada</option>
+                <option value="VENCIDA">Vencida</option>
+              </select>
+            </div>
           </div>
         </div>
 
