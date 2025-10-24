@@ -26,6 +26,7 @@ import {
   Box,
   Textarea,
   Alert,
+  Anchor,
 } from "@mantine/core";
 import {
   IconUser,
@@ -42,6 +43,7 @@ import {
   IconUsers,
   IconCheck,
   IconX,
+  IconEye,
 } from "@tabler/icons-react";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
@@ -388,8 +390,8 @@ export default function ClientesPage() {
               </Grid>
             </Card>
 
-            {/* Tabla de Clientes */}
-            <Card shadow="sm" padding="lg" radius="md" className="bg-white">
+            {/* Tabla de Clientes - Desktop */}
+            <Card shadow="sm" padding="lg" radius="md" className="bg-white hidden md:block">
               {filteredClientes && filteredClientes.length > 0 ? (
                 <div className="overflow-x-auto">
                   <Table striped highlightOnHover withTableBorder>
@@ -439,7 +441,14 @@ export default function ClientesPage() {
                               {cliente.telefono && (
                                 <Group gap="xs">
                                   <IconPhone size={14} className="text-gray-500" />
-                                  <Text size="xs">{cliente.telefono}</Text>
+                                  <Anchor
+                                    href={`tel:${cliente.telefono}`}
+                                    size="xs"
+                                    c="blue"
+                                    underline="hover"
+                                  >
+                                    {cliente.telefono}
+                                  </Anchor>
                                 </Group>
                               )}
                             </Stack>
@@ -523,6 +532,170 @@ export default function ClientesPage() {
                 </Center>
               )}
             </Card>
+
+            {/* Cards de Clientes - Mobile */}
+            <div className="md:hidden">
+              {filteredClientes && filteredClientes.length > 0 ? (
+                <Stack gap="sm">
+                  {filteredClientes.map((cliente) => (
+                    <Card
+                      key={cliente.id}
+                      shadow="sm"
+                      padding="md"
+                      radius="md"
+                      className="bg-white"
+                      withBorder
+                    >
+                      <Stack gap="xs">
+                        <Group justify="space-between" align="flex-start">
+                          <div style={{ flex: 1 }}>
+                            <Text size="sm" fw={600} mb={4}>
+                              {cliente.nombre}
+                            </Text>
+                            {cliente.rut && (
+                              <Text size="xs" c="dimmed">
+                                RUT: {cliente.rut}
+                              </Text>
+                            )}
+                          </div>
+                          <Badge
+                            color={getTipoClienteBadgeColor(cliente.tipoCliente)}
+                            variant="light"
+                            size="sm"
+                          >
+                            {getTipoClienteLabel(cliente.tipoCliente)}
+                          </Badge>
+                        </Group>
+
+                        <Divider />
+
+                        <Grid gutter="xs">
+                          {cliente.empresa && (
+                            <Grid.Col span={12}>
+                              <Group gap={4}>
+                                <IconBuilding size={14} className="text-gray-500" />
+                                <Text size="xs">{cliente.empresa}</Text>
+                              </Group>
+                            </Grid.Col>
+                          )}
+
+                          {cliente.email && (
+                            <Grid.Col span={12}>
+                              <Group gap={4}>
+                                <IconMail size={14} className="text-gray-500" />
+                                <Text size="xs">{cliente.email}</Text>
+                              </Group>
+                            </Grid.Col>
+                          )}
+
+                          {cliente.telefono && (
+                            <Grid.Col span={12}>
+                              <Group gap={4}>
+                                <IconPhone size={14} className="text-gray-500" />
+                                <Anchor
+                                  href={`tel:${cliente.telefono}`}
+                                  size="xs"
+                                  c="blue"
+                                  underline="hover"
+                                >
+                                  {cliente.telefono}
+                                </Anchor>
+                              </Group>
+                            </Grid.Col>
+                          )}
+
+                          {cliente.direccion && (
+                            <Grid.Col span={12}>
+                              <Group gap={4}>
+                                <IconMapPin size={14} className="text-gray-500" />
+                                <Text size="xs">{cliente.direccion}</Text>
+                              </Group>
+                            </Grid.Col>
+                          )}
+
+                          <Grid.Col span={6}>
+                            <Text size="xs" c="dimmed">
+                              Eventos
+                            </Text>
+                            <Badge
+                              color={cliente._count.eventos > 0 ? "green" : "gray"}
+                              variant="light"
+                              size="sm"
+                            >
+                              {cliente._count.eventos}
+                            </Badge>
+                          </Grid.Col>
+
+                          <Grid.Col span={6}>
+                            <Text size="xs" c="dimmed">
+                              Creado
+                            </Text>
+                            <Text size="xs" fw={500}>
+                              {new Date(cliente.createdAt).toLocaleDateString("es-CL")}
+                            </Text>
+                          </Grid.Col>
+                        </Grid>
+
+                        <Divider />
+
+                        <Group justify="flex-end" gap={4}>
+                          <ActionIcon
+                            variant="light"
+                            color="indigo"
+                            onClick={() => handleViewDetails(cliente)}
+                            size="sm"
+                          >
+                            <IconEye size={14} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="light"
+                            color="blue"
+                            onClick={() => handleOpenModal(cliente.id)}
+                            size="sm"
+                          >
+                            <IconEdit size={14} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="light"
+                            color="red"
+                            onClick={() => handleDelete(cliente.id)}
+                            size="sm"
+                          >
+                            <IconTrash size={14} />
+                          </ActionIcon>
+                        </Group>
+                      </Stack>
+                    </Card>
+                  ))}
+                </Stack>
+              ) : (
+                <Card shadow="sm" padding="lg" radius="md" className="bg-white">
+                  <Center className="py-12">
+                    <Stack align="center" gap="md">
+                      <IconUser
+                        size={48}
+                        className="text-gray-400"
+                        stroke={1.5}
+                      />
+                      <div className="text-center">
+                        <Text size="lg" fw={500} c="dimmed">
+                          No hay clientes registrados
+                        </Text>
+                        <Text size="sm" c="dimmed">
+                          Comienza agregando tu primer cliente
+                        </Text>
+                      </div>
+                      <Button
+                        leftSection={<IconPlus size={20} />}
+                        onClick={() => handleOpenModal()}
+                      >
+                        Agregar Cliente
+                      </Button>
+                    </Stack>
+                  </Center>
+                </Card>
+              )}
+            </div>
           </Stack>
         </div>
       </div>

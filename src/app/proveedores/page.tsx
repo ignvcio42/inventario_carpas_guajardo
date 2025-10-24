@@ -27,6 +27,7 @@ import {
   Textarea,
   Switch,
   Alert,
+  Anchor,
 } from "@mantine/core";
 import {
   IconBuildingStore,
@@ -43,6 +44,7 @@ import {
   IconX,
   IconToggleRight,
   IconToggleLeft,
+  IconEye,
 } from "@tabler/icons-react";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
@@ -441,8 +443,8 @@ export default function ProveedoresPage() {
               </Grid>
             </Card>
 
-            {/* Tabla de Proveedores */}
-            <Card shadow="sm" padding="lg" radius="md" className="bg-white">
+            {/* Tabla de Proveedores - Desktop */}
+            <Card shadow="sm" padding="lg" radius="md" className="bg-white hidden md:block">
               {filteredProveedores && filteredProveedores.length > 0 ? (
                 <div className="overflow-x-auto">
                   <Table striped highlightOnHover withTableBorder>
@@ -491,7 +493,14 @@ export default function ProveedoresPage() {
                               {proveedor.telefono && (
                                 <Group gap="xs">
                                   <IconPhone size={14} className="text-gray-500" />
-                                  <Text size="xs">{proveedor.telefono}</Text>
+                                  <Anchor
+                                    href={`tel:${proveedor.telefono}`}
+                                    size="xs"
+                                    c="blue"
+                                    underline="hover"
+                                  >
+                                    {proveedor.telefono}
+                                  </Anchor>
                                 </Group>
                               )}
                               {proveedor.contacto && (
@@ -588,6 +597,183 @@ export default function ProveedoresPage() {
                 </Center>
               )}
             </Card>
+
+            {/* Cards de Proveedores - Mobile */}
+            <div className="md:hidden">
+              {filteredProveedores && filteredProveedores.length > 0 ? (
+                <Stack gap="sm">
+                  {filteredProveedores.map((proveedor) => (
+                    <Card
+                      key={proveedor.id}
+                      shadow="sm"
+                      padding="md"
+                      radius="md"
+                      className="bg-white"
+                      withBorder
+                    >
+                      <Stack gap="xs">
+                        <Group justify="space-between" align="flex-start">
+                          <div style={{ flex: 1 }}>
+                            <Text size="sm" fw={600} mb={4}>
+                              {proveedor.nombre}
+                            </Text>
+                            {proveedor.rut && (
+                              <Text size="xs" c="dimmed">
+                                RUT: {proveedor.rut}
+                              </Text>
+                            )}
+                          </div>
+                          <Badge
+                            color={getTipoServicioBadgeColor(proveedor.tipoServicio)}
+                            variant="light"
+                            size="sm"
+                          >
+                            {getTipoServicioLabel(proveedor.tipoServicio)}
+                          </Badge>
+                        </Group>
+
+                        <Divider />
+
+                        <Grid gutter="xs">
+                          {proveedor.email && (
+                            <Grid.Col span={12}>
+                              <Group gap={4}>
+                                <IconMail size={14} className="text-gray-500" />
+                                <Text size="xs">{proveedor.email}</Text>
+                              </Group>
+                            </Grid.Col>
+                          )}
+
+                          {proveedor.telefono && (
+                            <Grid.Col span={12}>
+                              <Group gap={4}>
+                                <IconPhone size={14} className="text-gray-500" />
+                                <Anchor
+                                  href={`tel:${proveedor.telefono}`}
+                                  size="xs"
+                                  c="blue"
+                                  underline="hover"
+                                >
+                                  {proveedor.telefono}
+                                </Anchor>
+                              </Group>
+                            </Grid.Col>
+                          )}
+
+                          {proveedor.contacto && (
+                            <Grid.Col span={12}>
+                              <Group gap={4}>
+                                <IconUser size={14} className="text-gray-500" />
+                                <Text size="xs">{proveedor.contacto}</Text>
+                              </Group>
+                            </Grid.Col>
+                          )}
+
+                          {proveedor.direccion && (
+                            <Grid.Col span={12}>
+                              <Group gap={4}>
+                                <IconMapPin size={14} className="text-gray-500" />
+                                <Text size="xs">{proveedor.direccion}</Text>
+                              </Group>
+                            </Grid.Col>
+                          )}
+
+                          <Grid.Col span={6}>
+                            <Text size="xs" c="dimmed">
+                              Estado
+                            </Text>
+                            <Badge
+                              color={proveedor.activo ? "green" : "red"}
+                              variant="light"
+                              size="sm"
+                            >
+                              {proveedor.activo ? "Activo" : "Inactivo"}
+                            </Badge>
+                          </Grid.Col>
+
+                          <Grid.Col span={6}>
+                            <Text size="xs" c="dimmed">
+                              Creado
+                            </Text>
+                            <Text size="xs" fw={500}>
+                              {new Date(proveedor.createdAt).toLocaleDateString("es-CL")}
+                            </Text>
+                          </Grid.Col>
+                        </Grid>
+
+                        <Divider />
+
+                        <Group justify="flex-end" gap={4}>
+                          <ActionIcon
+                            variant="light"
+                            color="indigo"
+                            onClick={() => handleViewDetails(proveedor)}
+                            size="sm"
+                          >
+                            <IconEye size={14} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="light"
+                            color="blue"
+                            onClick={() => handleOpenModal(proveedor.id)}
+                            size="sm"
+                          >
+                            <IconEdit size={14} />
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="light"
+                            color={proveedor.activo ? "orange" : "green"}
+                            onClick={() => handleToggleStatus(proveedor.id)}
+                            loading={toggleStatus.isPending}
+                            size="sm"
+                          >
+                            {proveedor.activo ? (
+                              <IconToggleRight size={14} />
+                            ) : (
+                              <IconToggleLeft size={14} />
+                            )}
+                          </ActionIcon>
+                          <ActionIcon
+                            variant="light"
+                            color="red"
+                            onClick={() => handleDelete(proveedor.id)}
+                            size="sm"
+                          >
+                            <IconTrash size={14} />
+                          </ActionIcon>
+                        </Group>
+                      </Stack>
+                    </Card>
+                  ))}
+                </Stack>
+              ) : (
+                <Card shadow="sm" padding="lg" radius="md" className="bg-white">
+                  <Center className="py-12">
+                    <Stack align="center" gap="md">
+                      <IconBuildingStore
+                        size={48}
+                        className="text-gray-400"
+                        stroke={1.5}
+                      />
+                      <div className="text-center">
+                        <Text size="lg" fw={500} c="dimmed">
+                          No hay proveedores registrados
+                        </Text>
+                        <Text size="sm" c="dimmed">
+                          Comienza agregando tu primer proveedor
+                        </Text>
+                      </div>
+                      <Button
+                        leftSection={<IconPlus size={20} />}
+                        onClick={() => handleOpenModal()}
+                      >
+                        Agregar Proveedor
+                      </Button>
+                    </Stack>
+                  </Center>
+                </Card>
+              )}
+            </div>
           </Stack>
         </div>
       </div>
