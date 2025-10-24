@@ -13,6 +13,7 @@ export const profileRouter = createTRPCRouter({
         id: true,
         name: true,
         email: true,
+        emailVerified: true,
         image: true,
         role: true,
         avatarUrl: true,
