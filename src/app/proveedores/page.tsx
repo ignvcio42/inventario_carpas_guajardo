@@ -326,7 +326,7 @@ export default function ProveedoresPage() {
 
             {/* Estadísticas */}
             {proveedorStats && (
-              <Grid>
+              <Grid gutter="md">
                 <Grid.Col span={{ base: 6, sm: 3 }}>
                   <Card shadow="sm" padding="md" radius="md" className="bg-white">
                     <Group>

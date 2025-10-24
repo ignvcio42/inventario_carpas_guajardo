@@ -72,11 +72,20 @@ export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedVisitDate, setSelectedVisitDate] = useState<Date | null>(null);
 
+  // Redirigir si no hay sesión
+  if (status === "unauthenticated") {
+    router.push("/auth/signin");
+    return null;
+  }
+
   if (status === "loading" || statsLoading) {
     return (
       <MainLayout>
         <Center className="h-64">
-          <Loader size="lg" />
+          <Stack align="center" gap="md">
+            <Loader size="lg" />
+            <Text size="sm" c="dimmed">Cargando dashboard...</Text>
+          </Stack>
         </Center>
       </MainLayout>
     );

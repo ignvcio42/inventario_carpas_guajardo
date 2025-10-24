@@ -288,7 +288,7 @@ export default function ClientesPage() {
 
             {/* Estadísticas */}
             {clienteStats && (
-              <Grid>
+              <Grid gutter="md">
                 <Grid.Col span={{ base: 6, sm: 3 }}>
                   <Card shadow="sm" padding="md" radius="md" className="bg-white">
                     <Group>
