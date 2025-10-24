@@ -154,7 +154,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 if (hasChildren) {
                   const isContactsItem = item.name === "Contactos";
                   const isOpen = isContactsItem ? contactsOpen : false;
-                  const toggleOpen = isContactsItem ? () => setContactsOpen(!contactsOpen) : () => {};
+                  const toggleOpen = isContactsItem ? () => setContactsOpen(!contactsOpen) : () => {
+                    // Placeholder para futuros menús desplegables
+                  };
                   
                   return (
                     <Box key={item.name} className="mb-1">
