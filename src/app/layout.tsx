@@ -8,6 +8,7 @@ import { type Metadata } from "next";
 import AuthProvider from "./_components/auth-provider";
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
+import PushNotificationSetup from "./_components/push-notification-setup";
 
 import { TRPCReactProvider } from "~/trpc/react";
 
@@ -43,7 +44,10 @@ export default function RootLayout({
         <MantineProvider>
           <Notifications />
           <AuthProvider>
-            <TRPCReactProvider>{children}</TRPCReactProvider>
+            <TRPCReactProvider>
+              {children}
+              <PushNotificationSetup />
+            </TRPCReactProvider>
           </AuthProvider>
         </MantineProvider>
       </body>

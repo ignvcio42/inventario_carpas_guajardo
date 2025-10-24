@@ -6,6 +6,7 @@ import { notificationRouter } from "~/server/api/routers/notification";
 import { dashboardRouter } from "~/server/api/routers/dashboard";
 import { adminRouter } from "~/server/api/routers/admin";
 import { sketchRouter } from "~/server/api/routers/sketch";
+import { pushRouter } from "~/server/api/routers/push";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
   dashboard: dashboardRouter,
   admin: adminRouter,
   sketch: sketchRouter,
+  push: pushRouter,
 });
 
 // export type definition of API

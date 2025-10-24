@@ -44,3 +44,5 @@ yarn-error.log*
 
 # idea files
 .idea
+generate-vapid-keys.cjs
+PUSH_NOTIFICATIONS_SETUP.md

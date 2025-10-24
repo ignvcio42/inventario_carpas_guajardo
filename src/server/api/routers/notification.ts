@@ -3,6 +3,7 @@ import {
   createTRPCRouter,
   protectedProcedure,
 } from "~/server/api/trpc";
+import { sendPushNotification } from "~/server/push-service";
 
 export const notificationRouter = createTRPCRouter({
   // Obtener todas las notificaciones del usuario
@@ -118,7 +119,7 @@ export const notificationRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.notification.create({
+      const notification = await ctx.db.notification.create({
         data: {
           title: input.title,
           message: input.message,
@@ -127,6 +128,19 @@ export const notificationRouter = createTRPCRouter({
           actionByName: input.actionByName,
         },
       });
+
+      // Enviar notificación push (sin esperar a que termine)
+      sendPushNotification(input.userId, {
+        title: input.title,
+        body: input.message,
+        url: '/notifications',
+        tag: 'notification',
+        notificationId: notification.id,
+      }).catch(error => {
+        console.error('Error al enviar notificación push:', error);
+      });
+
+      return notification;
     }),
 });
 

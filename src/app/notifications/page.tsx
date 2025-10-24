@@ -31,6 +31,7 @@ import {
 } from "@tabler/icons-react";
 import { notifications as mantineNotifications } from "@mantine/notifications";
 import { api } from "~/trpc/react";
+import { PushNotificationSettings } from "../_components/push-notification-setup";
 
 export default function NotificationsPage() {
   const { data: session, status } = useSession();
@@ -341,6 +342,9 @@ export default function NotificationsPage() {
                 )}
               </Group>
             </Card>
+
+            {/* Push Notification Settings */}
+            <PushNotificationSettings />
 
             {/* Actions */}
             {allNotifications && allNotifications.length > 0 && (
