@@ -28,6 +28,7 @@ import {
   ThemeIcon,
   Tooltip,
   Box,
+  Anchor,
 } from "@mantine/core";
 import {
   IconPlus,
@@ -515,15 +516,28 @@ export default function EventosPage() {
                                   <Text size="sm" fw={500}>
                                     {event.nombreCliente}
                                   </Text>
-                                  <Text size="xs" c="dimmed">
+                                  <Anchor
+                                    href={`tel:${event.contacto}`}
+                                    size="xs"
+                                    c="blue"
+                                    underline="hover"
+                                  >
                                     {event.contacto}
-                                  </Text>
+                                  </Anchor>
                                 </div>
                               </Table.Td>
                               <Table.Td>
-                                <Text size="sm" lineClamp={1}>
+                                <Anchor
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.direccion)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  size="sm"
+                                  c="blue"
+                                  underline="hover"
+                                  lineClamp={1}
+                                >
                                   {event.direccion}
-                                </Text>
+                                </Anchor>
                               </Table.Td>
                               <Table.Td>
                                 <Tooltip label={formatDateForTooltip(event.startDate)} position="top">
@@ -637,9 +651,14 @@ export default function EventosPage() {
                                 <Text size="sm" fw={600} mb={4}>
                                   {event.nombreCliente}
                                 </Text>
-                                <Text size="xs" c="dimmed">
+                                <Anchor
+                                  href={`tel:${event.contacto}`}
+                                  size="xs"
+                                  c="blue"
+                                  underline="hover"
+                                >
                                   {event.contacto}
-                                </Text>
+                                </Anchor>
                               </div>
                               <Badge
                                 color={
@@ -669,9 +688,16 @@ export default function EventosPage() {
                               <Grid.Col span={12}>
                                 <Group gap={4}>
                                   <IconMapPin size={14} className="text-gray-500" />
-                                  <Text size="xs" c="dimmed">
+                                  <Anchor
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.direccion)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    size="xs"
+                                    c="blue"
+                                    underline="hover"
+                                  >
                                     {event.direccion}
-                                  </Text>
+                                  </Anchor>
                                 </Group>
                               </Grid.Col>
 

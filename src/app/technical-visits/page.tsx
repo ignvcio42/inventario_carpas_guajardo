@@ -25,6 +25,7 @@ import {
   ScrollArea,
   Divider,
   Box,
+  Anchor,
 } from "@mantine/core";
 import {
   IconPlus,
@@ -381,15 +382,28 @@ export default function TechnicalVisitsPage() {
                                   <Text size="sm" fw={500}>
                                     {visit.nombreCliente}
                                   </Text>
-                                  <Text size="xs" c="dimmed">
+                                  <Anchor
+                                    href={`tel:${visit.contacto}`}
+                                    size="xs"
+                                    c="blue"
+                                    underline="hover"
+                                  >
                                     {visit.contacto}
-                                  </Text>
+                                  </Anchor>
                                 </div>
                               </Table.Td>
                               <Table.Td>
-                                <Text size="sm" lineClamp={1}>
+                                <Anchor
+                                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visit.direccion)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  size="sm"
+                                  c="blue"
+                                  underline="hover"
+                                  lineClamp={1}
+                                >
                                   {visit.direccion}
-                                </Text>
+                                </Anchor>
                               </Table.Td>
                               <Table.Td>
                                 <Text size="sm">
@@ -489,9 +503,14 @@ export default function TechnicalVisitsPage() {
                                 <Text size="sm" fw={600} mb={4}>
                                   {visit.nombreCliente}
                                 </Text>
-                                <Text size="xs" c="dimmed">
+                                <Anchor
+                                  href={`tel:${visit.contacto}`}
+                                  size="xs"
+                                  c="blue"
+                                  underline="hover"
+                                >
                                   {visit.contacto}
-                                </Text>
+                                </Anchor>
                               </div>
                               <Badge
                                 color={
@@ -521,9 +540,16 @@ export default function TechnicalVisitsPage() {
                               <Grid.Col span={12}>
                                 <Group gap={4}>
                                   <IconMapPin size={14} className="text-gray-500" />
-                                  <Text size="xs" c="dimmed">
+                                  <Anchor
+                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(visit.direccion)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    size="xs"
+                                    c="blue"
+                                    underline="hover"
+                                  >
                                     {visit.direccion}
-                                  </Text>
+                                  </Anchor>
                                 </Group>
                               </Grid.Col>
 

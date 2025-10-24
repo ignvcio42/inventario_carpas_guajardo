@@ -116,7 +116,14 @@ export const dashboardRouter = createTRPCRouter({
   // Obtener próximos eventos (calendario)
   getUpcomingEvents: protectedProcedure.query(async ({ ctx }) => {
     const now = new Date();
-    now.setHours(0, 0, 0, 0); // Inicio del día actual
+    now.setHours(0, 0, 0, 0);
+
+    // Rango: últimos 3 meses hasta 6 meses en el futuro
+    const threeMonthsAgo = new Date(now);
+    threeMonthsAgo.setMonth(now.getMonth() - 3);
+    
+    const sixMonthsFromNow = new Date(now);
+    sixMonthsFromNow.setMonth(now.getMonth() + 6);
 
     return ctx.db.event.findMany({
       where: {
@@ -124,17 +131,26 @@ export const dashboardRouter = createTRPCRouter({
           not: "CANCELADO",
         },
         OR: [
-          // Eventos que empiezan hoy o en el futuro
+          // Eventos cuya fecha de inicio está en el rango
           {
             startDate: {
-              gte: now,
+              gte: threeMonthsAgo,
+              lte: sixMonthsFromNow,
             },
           },
-          // Eventos que ya empezaron pero aún no terminan
+          // Eventos cuya fecha de término está en el rango
           {
             endDate: {
-              gte: now,
+              gte: threeMonthsAgo,
+              lte: sixMonthsFromNow,
             },
+          },
+          // Eventos que abarcan todo el rango
+          {
+            AND: [
+              { startDate: { lte: threeMonthsAgo } },
+              { endDate: { gte: sixMonthsFromNow } },
+            ],
           },
         ],
       },
@@ -156,14 +172,20 @@ export const dashboardRouter = createTRPCRouter({
   // Obtener próximas visitas técnicas
   getUpcomingVisits: protectedProcedure.query(async ({ ctx }) => {
     const now = new Date();
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(now.getDate() + 30);
+    now.setHours(0, 0, 0, 0);
+
+    // Rango: últimos 3 meses hasta 6 meses en el futuro
+    const threeMonthsAgo = new Date(now);
+    threeMonthsAgo.setMonth(now.getMonth() - 3);
+    
+    const sixMonthsFromNow = new Date(now);
+    sixMonthsFromNow.setMonth(now.getMonth() + 6);
 
     return ctx.db.technicalEvent.findMany({
       where: {
         fechaVisita: {
-          gte: now,
-          lte: thirtyDaysFromNow,
+          gte: threeMonthsAgo,
+          lte: sixMonthsFromNow,
         },
         estado: {
           not: "CANCELADA",
