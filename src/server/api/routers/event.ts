@@ -4,6 +4,7 @@ import {
   protectedProcedure,
 } from "~/server/api/trpc";
 import { Estado } from "@prisma/client";
+import { sendPushNotificationToMany } from "~/server/push-service";
 
 export const eventRouter = createTRPCRouter({
   // Obtener todos los eventos
@@ -141,15 +142,31 @@ export const eventRouter = createTRPCRouter({
         select: { id: true },
       });
 
+      const notificationTitle = "Nuevo evento creado";
+      const notificationMessage = `${ctx.session.user.name || "Un usuario"} ha creado el evento para ${input.nombreCliente} el ${new Date(input.startDate).toLocaleDateString("es-CL")}`;
+
       // Crear notificación para cada usuario
       await ctx.db.notification.createMany({
         data: allUsers.map((user) => ({
-          title: "Nuevo evento creado",
-          message: `${ctx.session.user.name || "Un usuario"} ha creado el evento para ${input.nombreCliente} el ${new Date(input.startDate).toLocaleDateString("es-CL")}`,
+          title: notificationTitle,
+          message: notificationMessage,
           userId: user.id,
           actionBy: ctx.session.user.id,
           actionByName: ctx.session.user.name || "Usuario",
         })),
+      });
+
+      // Enviar notificaciones push a todos los usuarios (sin bloquear)
+      sendPushNotificationToMany(
+        allUsers.map((user) => user.id),
+        {
+          title: notificationTitle,
+          body: notificationMessage,
+          url: '/eventos',
+          tag: 'evento-nuevo',
+        }
+      ).catch(error => {
+        console.error('Error al enviar notificaciones push:', error);
       });
 
       return event;
@@ -202,28 +219,63 @@ export const eventRouter = createTRPCRouter({
         select: { id: true },
       });
 
+      let notificationTitle = "";
+      let notificationMessage = "";
+
       // Si cambió el estado, crear notificación específica
       if (estado && oldEvent && oldEvent.estado !== estado) {
+        notificationTitle = "Estado de evento actualizado";
+        notificationMessage = `${ctx.session.user.name || "Un usuario"} cambió el estado del evento de ${updatedEvent.nombreCliente} de ${oldEvent.estado} a ${estado}`;
+        
         await ctx.db.notification.createMany({
           data: allUsers.map((user) => ({
-            title: "Estado de evento actualizado",
-            message: `${ctx.session.user.name || "Un usuario"} cambió el estado del evento de ${updatedEvent.nombreCliente} de ${oldEvent.estado} a ${estado}`,
+            title: notificationTitle,
+            message: notificationMessage,
             userId: user.id,
             actionBy: ctx.session.user.id,
             actionByName: ctx.session.user.name || "Usuario",
           })),
         });
+
+        // Enviar notificaciones push
+        sendPushNotificationToMany(
+          allUsers.map((user) => user.id),
+          {
+            title: notificationTitle,
+            body: notificationMessage,
+            url: '/eventos',
+            tag: 'evento-actualizado',
+          }
+        ).catch(error => {
+          console.error('Error al enviar notificaciones push:', error);
+        });
       } 
       // Si se editó cualquier otro campo (no solo el estado)
       else if (Object.keys(data).length > 0) {
+        notificationTitle = "Evento actualizado";
+        notificationMessage = `${ctx.session.user.name || "Un usuario"} ha editado el evento de ${updatedEvent.nombreCliente}`;
+        
         await ctx.db.notification.createMany({
           data: allUsers.map((user) => ({
-            title: "Evento actualizado",
-            message: `${ctx.session.user.name || "Un usuario"} ha editado el evento de ${updatedEvent.nombreCliente}`,
+            title: notificationTitle,
+            message: notificationMessage,
             userId: user.id,
             actionBy: ctx.session.user.id,
             actionByName: ctx.session.user.name || "Usuario",
           })),
+        });
+
+        // Enviar notificaciones push
+        sendPushNotificationToMany(
+          allUsers.map((user) => user.id),
+          {
+            title: notificationTitle,
+            body: notificationMessage,
+            url: '/eventos',
+            tag: 'evento-actualizado',
+          }
+        ).catch(error => {
+          console.error('Error al enviar notificaciones push:', error);
         });
       }
 

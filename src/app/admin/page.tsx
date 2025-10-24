@@ -39,6 +39,7 @@ import {
   IconChartBar,
   IconClock,
   IconUser,
+  IconTestPipe,
 } from "@tabler/icons-react";
 import { notifications } from "@mantine/notifications";
 import { api } from "~/trpc/react";
@@ -158,6 +159,26 @@ export default function AdminPanel() {
         color: "green",
       });
       refetchNotifications();
+    },
+  });
+
+  const testPushNotification = api.admin.testPushNotification.useMutation({
+    onSuccess: (data) => {
+      notifications.show({
+        title: "✅ Notificación de prueba enviada",
+        message: data.message,
+        color: "green",
+        icon: <IconCheck size={18} />,
+      });
+      refetchNotifications();
+    },
+    onError: (error) => {
+      notifications.show({
+        title: "Error",
+        message: error.message || "No se pudo enviar la notificación de prueba",
+        color: "red",
+        icon: <IconX size={18} />,
+      });
     },
   });
 
@@ -379,6 +400,15 @@ export default function AdminPanel() {
                       </Text>
                       <Group>
                         <Button
+                          variant="filled"
+                          color="teal"
+                          leftSection={<IconTestPipe size={16} />}
+                          onClick={() => testPushNotification.mutate({ sendToAll: true })}
+                          loading={testPushNotification.isPending}
+                        >
+                          Enviar Prueba Push
+                        </Button>
+                        <Button
                           variant="light"
                           leftSection={<IconCheck size={16} />}
                           onClick={() => markAllAsRead.mutate()}
@@ -469,12 +499,69 @@ export default function AdminPanel() {
 
                 {/* Tab de Estadísticas */}
                 <Tabs.Panel value="stats" pt="md">
-                  <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
-                    {/* Estadísticas de Usuarios */}
-                    <Card withBorder>
-                      <Title order={4} mb="md">
-                        Estadísticas de Usuarios
-                      </Title>
+                  <Stack gap="lg">
+                    {/* Tarjeta de Prueba de Notificaciones Push */}
+                    <Card withBorder shadow="md" style={{ backgroundColor: '#f0fdf4' }}>
+                      <Stack gap="md">
+                        <Group>
+                          <ThemeIcon size="lg" radius="xl" color="teal" variant="light">
+                            <IconTestPipe size={24} />
+                          </ThemeIcon>
+                          <div style={{ flex: 1 }}>
+                            <Title order={4}>Prueba de Notificaciones Push</Title>
+                            <Text size="sm" c="dimmed">
+                              Envía una notificación de prueba a todos los usuarios para verificar que el sistema funciona correctamente
+                            </Text>
+                          </div>
+                        </Group>
+                        
+                        <Paper p="md" withBorder style={{ backgroundColor: 'white' }}>
+                          <Stack gap="xs">
+                            <Text size="sm" fw={500}>¿Qué hace este botón?</Text>
+                            <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                              <li>
+                                <Text size="xs" c="dimmed">
+                                  Envía una notificación push a TODOS los usuarios del sistema
+                                </Text>
+                              </li>
+                              <li>
+                                <Text size="xs" c="dimmed">
+                                  Crea notificaciones en la base de datos
+                                </Text>
+                              </li>
+                              <li>
+                                <Text size="xs" c="dimmed">
+                                  Los usuarios con notificaciones activadas las recibirán en sus dispositivos
+                                </Text>
+                              </li>
+                              <li>
+                                <Text size="xs" c="dimmed">
+                                  Útil para verificar que las notificaciones push funcionan sin crear eventos reales
+                                </Text>
+                              </li>
+                            </ul>
+                          </Stack>
+                        </Paper>
+
+                        <Button
+                          size="lg"
+                          color="teal"
+                          leftSection={<IconTestPipe size={20} />}
+                          onClick={() => testPushNotification.mutate({ sendToAll: true })}
+                          loading={testPushNotification.isPending}
+                          fullWidth
+                        >
+                          Enviar Notificación de Prueba a Todos
+                        </Button>
+                      </Stack>
+                    </Card>
+
+                    <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg">
+                      {/* Estadísticas de Usuarios */}
+                      <Card withBorder>
+                        <Title order={4} mb="md">
+                          Estadísticas de Usuarios
+                        </Title>
                       <Stack gap="md">
                         <Group justify="space-between">
                           <Text size="sm">Total de usuarios</Text>
@@ -541,7 +628,8 @@ export default function AdminPanel() {
                         </div>
                       </Stack>
                     </Card>
-                  </SimpleGrid>
+                    </SimpleGrid>
+                  </Stack>
                 </Tabs.Panel>
               </Tabs>
             </Card>

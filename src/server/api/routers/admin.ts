@@ -5,6 +5,7 @@ import {
   protectedProcedure,
 } from "~/server/api/trpc";
 import { Role } from "@prisma/client";
+import { sendPushNotificationToMany } from "~/server/push-service";
 
 export const adminRouter = createTRPCRouter({
   // Verificar si el usuario actual es admin
@@ -226,5 +227,76 @@ export const adminRouter = createTRPCRouter({
       message: `Se marcaron ${result.count} notificaciones como leídas`,
     };
   }),
+
+  // ========== PRUEBAS ==========
+
+  // Enviar notificación push de prueba
+  testPushNotification: adminProcedure
+    .input(
+      z.object({
+        sendToAll: z.boolean().default(true),
+        userId: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const notificationTitle = "🔔 Notificación de Prueba";
+      const notificationMessage = `${ctx.session.user.name || "Admin"} ha enviado una notificación de prueba a las ${new Date().toLocaleTimeString("es-CL")}`;
+
+      // Obtener usuarios a notificar
+      let userIds: string[];
+      let recipientCount: number;
+
+      if (input.sendToAll) {
+        const allUsers = await ctx.db.user.findMany({
+          select: { id: true },
+        });
+        userIds = allUsers.map((user) => user.id);
+        recipientCount = userIds.length;
+
+        // Crear notificaciones en la base de datos para todos
+        await ctx.db.notification.createMany({
+          data: allUsers.map((user) => ({
+            title: notificationTitle,
+            message: notificationMessage,
+            userId: user.id,
+            actionBy: ctx.session.user.id,
+            actionByName: ctx.session.user.name || "Admin",
+          })),
+        });
+      } else if (input.userId) {
+        userIds = [input.userId];
+        recipientCount = 1;
+
+        // Crear notificación en la base de datos para el usuario específico
+        await ctx.db.notification.create({
+          data: {
+            title: notificationTitle,
+            message: notificationMessage,
+            userId: input.userId,
+            actionBy: ctx.session.user.id,
+            actionByName: ctx.session.user.name || "Admin",
+          },
+        });
+      } else {
+        throw new Error("Debes especificar userId o sendToAll");
+      }
+
+      // Enviar notificaciones push
+      await sendPushNotificationToMany(userIds, {
+        title: notificationTitle,
+        body: notificationMessage,
+        url: "/notifications",
+        tag: "test-notification",
+      }).catch((error) => {
+        console.error("Error al enviar notificaciones push de prueba:", error);
+        throw new Error("Error al enviar notificaciones push");
+      });
+
+      return {
+        success: true,
+        recipientCount,
+        message: `Notificación de prueba enviada a ${recipientCount} usuario${recipientCount !== 1 ? "s" : ""}`,
+      };
+    }),
 });
 
