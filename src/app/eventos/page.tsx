@@ -27,6 +27,7 @@ import {
   Paper,
   ThemeIcon,
   Tooltip,
+  Box,
 } from "@mantine/core";
 import {
   IconPlus,
@@ -489,137 +490,293 @@ export default function EventosPage() {
             {/* Events Table */}
             <Card shadow="sm" padding="lg" radius="md" className="bg-white">
               {filteredAndSortedEvents && filteredAndSortedEvents.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table striped highlightOnHover withTableBorder>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th>Cliente</Table.Th>
-                        <Table.Th>Dirección</Table.Th>
-                        <Table.Th>Fecha Inicio Evento</Table.Th>
-                        <Table.Th>Fecha Inicio Montaje</Table.Th>
-                        <Table.Th>Fecha Fin Montaje</Table.Th>
-                        <Table.Th>Monto Total</Table.Th>
-                        <Table.Th>Estado</Table.Th>
-                        <Table.Th>Acciones</Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
+                <>
+                  {/* Desktop Table - Hidden on mobile */}
+                  <Box visibleFrom="md">
+                    <div className="overflow-x-auto">
+                      <Table striped highlightOnHover withTableBorder>
+                        <Table.Thead>
+                          <Table.Tr>
+                            <Table.Th>Cliente</Table.Th>
+                            <Table.Th>Dirección</Table.Th>
+                            <Table.Th>Fecha Inicio Evento</Table.Th>
+                            <Table.Th>Fecha Inicio Montaje</Table.Th>
+                            <Table.Th>Fecha Fin Montaje</Table.Th>
+                            <Table.Th>Monto Total</Table.Th>
+                            <Table.Th>Estado</Table.Th>
+                            <Table.Th>Acciones</Table.Th>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {filteredAndSortedEvents.map((event) => (
+                            <Table.Tr key={event.id}>
+                              <Table.Td>
+                                <div>
+                                  <Text size="sm" fw={500}>
+                                    {event.nombreCliente}
+                                  </Text>
+                                  <Text size="xs" c="dimmed">
+                                    {event.contacto}
+                                  </Text>
+                                </div>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm" lineClamp={1}>
+                                  {event.direccion}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Tooltip label={formatDateForTooltip(event.startDate)} position="top">
+                                  <Text size="sm" style={{ cursor: "help" }}>
+                                    {new Date(event.startDate).toLocaleDateString(
+                                      "es-CL"
+                                    )}
+                                  </Text>
+                                </Tooltip>
+                              </Table.Td>
+                              <Table.Td>
+                                <Tooltip label={formatDateForTooltip(event.horaInicio)} position="top">
+                                  <Text size="sm" style={{ cursor: "help" }}>
+                                    {new Date(event.horaInicio).toLocaleDateString(
+                                      "es-CL"
+                                    )}
+                                  </Text>
+                                </Tooltip>
+                              </Table.Td>
+                              <Table.Td>
+                                <Tooltip label={formatDateForTooltip(event.horaTermino)} position="top">
+                                  <Text size="sm" style={{ cursor: "help" }}>
+                                    {new Date(event.horaTermino).toLocaleDateString(
+                                      "es-CL"
+                                    )}
+                                  </Text>
+                                </Tooltip>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm" fw={500}>
+                                  ${Number(event.montoTotal).toLocaleString("es-CL")}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Select
+                                  value={event.estado}
+                                  onChange={(value) =>
+                                    value && handleStatusChange(event.id, value as Estado)
+                                  }
+                                  data={[
+                                    { value: Estado.PENDIENTE, label: "Pendiente" },
+                                    { value: Estado.EN_PROCESO, label: "En Proceso" },
+                                    { value: Estado.COMPLETADO, label: "Completado" },
+                                    { value: Estado.CANCELADO, label: "Cancelado" },
+                                  ]}
+                                  size="xs"
+                                  styles={{
+                                    input: {
+                                      fontWeight: 500,
+                                      backgroundColor:
+                                        event.estado === Estado.PENDIENTE
+                                          ? "#fff9db"
+                                          : event.estado === Estado.EN_PROCESO
+                                          ? "#dbeafe"
+                                          : event.estado === Estado.COMPLETADO
+                                          ? "#d1fae5"
+                                          : "#fee2e2",
+                                      color:
+                                        event.estado === Estado.PENDIENTE
+                                          ? "#854d0e"
+                                          : event.estado === Estado.EN_PROCESO
+                                          ? "#1e40af"
+                                          : event.estado === Estado.COMPLETADO
+                                          ? "#065f46"
+                                          : "#991b1b",
+                                    },
+                                  }}
+                                />
+                              </Table.Td>
+                              <Table.Td>
+                                <Group gap="xs">
+                                  <ActionIcon
+                                    variant="light"
+                                    color="indigo"
+                                    onClick={() => handleViewDetails(event)}
+                                    size="lg"
+                                  >
+                                    <IconEye size={16} />
+                                  </ActionIcon>
+                                  <ActionIcon
+                                    variant="light"
+                                    color="blue"
+                                    onClick={() => handleOpenModal(event.id)}
+                                  >
+                                    <IconEdit size={16} />
+                                  </ActionIcon>
+                                  <ActionIcon
+                                    variant="light"
+                                    color="red"
+                                    onClick={() => handleDelete(event.id)}
+                                  >
+                                    <IconTrash size={16} />
+                                  </ActionIcon>
+                                </Group>
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </div>
+                  </Box>
+
+                  {/* Mobile Cards - Hidden on desktop */}
+                  <Box hiddenFrom="md">
+                    <Stack gap="md">
                       {filteredAndSortedEvents.map((event) => (
-                        <Table.Tr key={event.id}>
-                          <Table.Td>
-                            <div>
-                              <Text size="sm" fw={500}>
-                                {event.nombreCliente}
-                              </Text>
-                              <Text size="xs" c="dimmed">
-                                {event.contacto}
-                              </Text>
-                            </div>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text size="sm" lineClamp={1}>
-                              {event.direccion}
-                            </Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Tooltip label={formatDateForTooltip(event.startDate)} position="top">
-                              <Text size="sm" style={{ cursor: "help" }}>
-                                {new Date(event.startDate).toLocaleDateString(
-                                  "es-CL"
-                                )}
-                              </Text>
-                            </Tooltip>
-                          </Table.Td>
-                          <Table.Td>
-                            <Tooltip label={formatDateForTooltip(event.horaInicio)} position="top">
-                              <Text size="sm" style={{ cursor: "help" }}>
-                                {new Date(event.horaInicio).toLocaleDateString(
-                                  "es-CL"
-                                )}
-                              </Text>
-                            </Tooltip>
-                          </Table.Td>
-                          <Table.Td>
-                            <Tooltip label={formatDateForTooltip(event.horaTermino)} position="top">
-                              <Text size="sm" style={{ cursor: "help" }}>
-                                {new Date(event.horaTermino).toLocaleDateString(
-                                  "es-CL"
-                                )}
-                              </Text>
-                            </Tooltip>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text size="sm" fw={500}>
-                              ${Number(event.montoTotal).toLocaleString("es-CL")}
-                            </Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Select
-                              value={event.estado}
-                              onChange={(value) =>
-                                value && handleStatusChange(event.id, value as Estado)
-                              }
-                              data={[
-                                { value: Estado.PENDIENTE, label: "Pendiente" },
-                                { value: Estado.EN_PROCESO, label: "En Proceso" },
-                                { value: Estado.COMPLETADO, label: "Completado" },
-                                { value: Estado.CANCELADO, label: "Cancelado" },
-                              ]}
-                              size="xs"
-                              styles={{
-                                input: {
-                                  fontWeight: 500,
-                                  backgroundColor:
-                                    event.estado === Estado.PENDIENTE
-                                      ? "#fff9db"
-                                      : event.estado === Estado.EN_PROCESO
-                                      ? "#dbeafe"
-                                      : event.estado === Estado.COMPLETADO
-                                      ? "#d1fae5"
-                                      : "#fee2e2",
-                                  color:
-                                    event.estado === Estado.PENDIENTE
-                                      ? "#854d0e"
-                                      : event.estado === Estado.EN_PROCESO
-                                      ? "#1e40af"
-                                      : event.estado === Estado.COMPLETADO
-                                      ? "#065f46"
-                                      : "#991b1b",
-                                },
-                              }}
-                            />
-                          </Table.Td>
-                          <Table.Td>
-                            <Group gap="xs">
-                              <ActionIcon
+                        <Paper key={event.id} p="md" withBorder radius="md" className="bg-gray-50">
+                          <Stack gap="xs">
+                            <Group justify="space-between" align="flex-start">
+                              <div style={{ flex: 1 }}>
+                                <Text size="sm" fw={600} mb={4}>
+                                  {event.nombreCliente}
+                                </Text>
+                                <Text size="xs" c="dimmed">
+                                  {event.contacto}
+                                </Text>
+                              </div>
+                              <Badge
+                                color={
+                                  event.estado === Estado.PENDIENTE
+                                    ? "yellow"
+                                    : event.estado === Estado.EN_PROCESO
+                                    ? "blue"
+                                    : event.estado === Estado.COMPLETADO
+                                    ? "green"
+                                    : "red"
+                                }
                                 variant="light"
-                                color="indigo"
-                                onClick={() => handleViewDetails(event)}
-                                size="lg"
                               >
-                                <IconEye size={16} />
-                              </ActionIcon>
-                              <ActionIcon
-                                variant="light"
-                                color="blue"
-                                onClick={() => handleOpenModal(event.id)}
-                              >
-                                <IconEdit size={16} />
-                              </ActionIcon>
-                              <ActionIcon
-                                variant="light"
-                                color="red"
-                                onClick={() => handleDelete(event.id)}
-                              >
-                                <IconTrash size={16} />
-                              </ActionIcon>
+                                {event.estado === Estado.PENDIENTE
+                                  ? "Pendiente"
+                                  : event.estado === Estado.EN_PROCESO
+                                  ? "En Proceso"
+                                  : event.estado === Estado.COMPLETADO
+                                  ? "Completado"
+                                  : "Cancelado"}
+                              </Badge>
                             </Group>
-                          </Table.Td>
-                        </Table.Tr>
+
+                            <Divider />
+
+                            <Grid gutter="xs">
+                              <Grid.Col span={12}>
+                                <Group gap={4}>
+                                  <IconMapPin size={14} className="text-gray-500" />
+                                  <Text size="xs" c="dimmed">
+                                    {event.direccion}
+                                  </Text>
+                                </Group>
+                              </Grid.Col>
+
+                              <Grid.Col span={6}>
+                                <Text size="xs" c="dimmed">
+                                  Inicio Evento
+                                </Text>
+                                <Text size="xs" fw={500}>
+                                  {new Date(event.startDate).toLocaleDateString("es-CL")}
+                                </Text>
+                                <Text size="xs" c="dimmed">
+                                  Inicio Montaje
+                                </Text>
+                                <Text size="xs" fw={500}>
+                                  {new Date(event.horaInicio).toLocaleDateString("es-CL")}
+                                </Text>
+                                <Text size="xs" c="dimmed">
+                                  Fin Montaje
+                                </Text>
+                                <Text size="xs" fw={500}>
+                                  {new Date(event.horaTermino).toLocaleDateString("es-CL")}
+                                </Text>
+                              </Grid.Col>
+
+                              <Grid.Col span={6}>
+                                <Text size="xs" c="dimmed">
+                                  Monto Total
+                                </Text>
+                                <Text size="xs" fw={600} c="green">
+                                  ${Number(event.montoTotal).toLocaleString("es-CL")}
+                                </Text>
+                              </Grid.Col>
+                            </Grid>
+
+                            <Divider />
+
+                            <Group justify="space-between" wrap="nowrap">
+                              <Select
+                                value={event.estado}
+                                onChange={(value) =>
+                                  value && handleStatusChange(event.id, value as Estado)
+                                }
+                                data={[
+                                  { value: Estado.PENDIENTE, label: "Pendiente" },
+                                  { value: Estado.EN_PROCESO, label: "En Proceso" },
+                                  { value: Estado.COMPLETADO, label: "Completado" },
+                                  { value: Estado.CANCELADO, label: "Cancelado" },
+                                ]}
+                                size="xs"
+                                style={{ flex: 1 }}
+                                styles={{
+                                  input: {
+                                    fontWeight: 500,
+                                    backgroundColor:
+                                      event.estado === Estado.PENDIENTE
+                                        ? "#fff9db"
+                                        : event.estado === Estado.EN_PROCESO
+                                        ? "#dbeafe"
+                                        : event.estado === Estado.COMPLETADO
+                                        ? "#d1fae5"
+                                        : "#fee2e2",
+                                    color:
+                                      event.estado === Estado.PENDIENTE
+                                        ? "#854d0e"
+                                        : event.estado === Estado.EN_PROCESO
+                                        ? "#1e40af"
+                                        : event.estado === Estado.COMPLETADO
+                                        ? "#065f46"
+                                        : "#991b1b",
+                                  },
+                                }}
+                              />
+                              <Group gap={4}>
+                                <ActionIcon
+                                  variant="light"
+                                  color="indigo"
+                                  onClick={() => handleViewDetails(event)}
+                                  size="sm"
+                                >
+                                  <IconEye size={14} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  variant="light"
+                                  color="blue"
+                                  onClick={() => handleOpenModal(event.id)}
+                                  size="sm"
+                                >
+                                  <IconEdit size={14} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  variant="light"
+                                  color="red"
+                                  onClick={() => handleDelete(event.id)}
+                                  size="sm"
+                                >
+                                  <IconTrash size={14} />
+                                </ActionIcon>
+                              </Group>
+                            </Group>
+                          </Stack>
+                        </Paper>
                       ))}
-                    </Table.Tbody>
-                  </Table>
-                </div>
+                    </Stack>
+                  </Box>
+                </>
               ) : (
                 <Center className="py-12">
                   <Stack align="center" gap="md">

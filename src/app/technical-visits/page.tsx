@@ -23,6 +23,8 @@ import {
   Paper,
   ThemeIcon,
   ScrollArea,
+  Divider,
+  Box,
 } from "@mantine/core";
 import {
   IconPlus,
@@ -355,122 +357,278 @@ export default function TechnicalVisitsPage() {
             {/* Visits Table */}
             <Card shadow="sm" padding="lg" radius="md" className="bg-white">
               {filteredAndSortedVisits && filteredAndSortedVisits.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <Table striped highlightOnHover withTableBorder>
-                    <Table.Thead>
-                      <Table.Tr>
-                        <Table.Th>Cliente</Table.Th>
-                        <Table.Th>Dirección</Table.Th>
-                        <Table.Th>Fecha Visita</Table.Th>
-                        <Table.Th>Hora</Table.Th>
-                        <Table.Th>Asignado a</Table.Th>
-                        <Table.Th>Estado</Table.Th>
-                        <Table.Th>Acciones</Table.Th>
-                      </Table.Tr>
-                    </Table.Thead>
-                    <Table.Tbody>
+                <>
+                  {/* Desktop Table - Hidden on mobile */}
+                  <Box visibleFrom="md">
+                    <div className="overflow-x-auto">
+                      <Table striped highlightOnHover withTableBorder>
+                        <Table.Thead>
+                          <Table.Tr>
+                            <Table.Th>Cliente</Table.Th>
+                            <Table.Th>Dirección</Table.Th>
+                            <Table.Th>Fecha Visita</Table.Th>
+                            <Table.Th>Hora</Table.Th>
+                            <Table.Th>Asignado a</Table.Th>
+                            <Table.Th>Estado</Table.Th>
+                            <Table.Th>Acciones</Table.Th>
+                          </Table.Tr>
+                        </Table.Thead>
+                        <Table.Tbody>
+                          {filteredAndSortedVisits.map((visit) => (
+                            <Table.Tr key={visit.id}>
+                              <Table.Td>
+                                <div>
+                                  <Text size="sm" fw={500}>
+                                    {visit.nombreCliente}
+                                  </Text>
+                                  <Text size="xs" c="dimmed">
+                                    {visit.contacto}
+                                  </Text>
+                                </div>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm" lineClamp={1}>
+                                  {visit.direccion}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">
+                                  {new Date(visit.fechaVisita).toLocaleDateString("es-CL")}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm">
+                                  {new Date(visit.horaVisita).toLocaleTimeString("es-CL", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Text size="sm" c={visit.assignedUser ? "blue" : "dimmed"}>
+                                  {visit.assignedUser?.name || "Sin asignar"}
+                                </Text>
+                              </Table.Td>
+                              <Table.Td>
+                                <Select
+                                  value={visit.estado}
+                                  onChange={(value) =>
+                                    value && handleStatusChange(visit.id, value as TechnicalVisitStatus)
+                                  }
+                                  data={[
+                                    { value: TechnicalVisitStatus.PROGRAMADA, label: "Programada" },
+                                    { value: TechnicalVisitStatus.REALIZADA, label: "Realizada" },
+                                    { value: TechnicalVisitStatus.REPROGRAMADA, label: "Reprogramada" },
+                                    { value: TechnicalVisitStatus.CANCELADA, label: "Cancelada" },
+                                  ]}
+                                  size="xs"
+                                  styles={{
+                                    input: {
+                                      fontWeight: 500,
+                                      backgroundColor:
+                                        visit.estado === TechnicalVisitStatus.PROGRAMADA
+                                          ? "#dbeafe"
+                                          : visit.estado === TechnicalVisitStatus.REALIZADA
+                                          ? "#d1fae5"
+                                          : visit.estado === TechnicalVisitStatus.REPROGRAMADA
+                                          ? "#fed7aa"
+                                          : "#fee2e2",
+                                      color:
+                                        visit.estado === TechnicalVisitStatus.PROGRAMADA
+                                          ? "#1e40af"
+                                          : visit.estado === TechnicalVisitStatus.REALIZADA
+                                          ? "#065f46"
+                                          : visit.estado === TechnicalVisitStatus.REPROGRAMADA
+                                          ? "#9a3412"
+                                          : "#991b1b",
+                                    },
+                                  }}
+                                />
+                              </Table.Td>
+                              <Table.Td>
+                                <Group gap="xs">
+                                  <ActionIcon
+                                    variant="light"
+                                    color="indigo"
+                                    onClick={() => handleViewDetails(visit)}
+                                    size="lg"
+                                  >
+                                    <IconEye size={16} />
+                                  </ActionIcon>
+                                  <ActionIcon
+                                    variant="light"
+                                    color="blue"
+                                    onClick={() => handleOpenModal(visit.id)}
+                                  >
+                                    <IconEdit size={16} />
+                                  </ActionIcon>
+                                  <ActionIcon
+                                    variant="light"
+                                    color="red"
+                                    onClick={() => handleDelete(visit.id)}
+                                  >
+                                    <IconTrash size={16} />
+                                  </ActionIcon>
+                                </Group>
+                              </Table.Td>
+                            </Table.Tr>
+                          ))}
+                        </Table.Tbody>
+                      </Table>
+                    </div>
+                  </Box>
+
+                  {/* Mobile Cards - Hidden on desktop */}
+                  <Box hiddenFrom="md">
+                    <Stack gap="md">
                       {filteredAndSortedVisits.map((visit) => (
-                        <Table.Tr key={visit.id}>
-                          <Table.Td>
-                            <div>
-                              <Text size="sm" fw={500}>
-                                {visit.nombreCliente}
-                              </Text>
-                              <Text size="xs" c="dimmed">
-                                {visit.contacto}
-                              </Text>
-                            </div>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text size="sm" lineClamp={1}>
-                              {visit.direccion}
-                            </Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text size="sm">
-                              {new Date(visit.fechaVisita).toLocaleDateString("es-CL")}
-                            </Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text size="sm">
-                              {new Date(visit.horaVisita).toLocaleTimeString("es-CL", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Text size="sm" c={visit.assignedUser ? "blue" : "dimmed"}>
-                              {visit.assignedUser?.name || "Sin asignar"}
-                            </Text>
-                          </Table.Td>
-                          <Table.Td>
-                            <Select
-                              value={visit.estado}
-                              onChange={(value) =>
-                                value && handleStatusChange(visit.id, value as TechnicalVisitStatus)
-                              }
-                              data={[
-                                { value: TechnicalVisitStatus.PROGRAMADA, label: "Programada" },
-                                { value: TechnicalVisitStatus.REALIZADA, label: "Realizada" },
-                                { value: TechnicalVisitStatus.REPROGRAMADA, label: "Reprogramada" },
-                                { value: TechnicalVisitStatus.CANCELADA, label: "Cancelada" },
-                              ]}
-                              size="xs"
-                              styles={{
-                                input: {
-                                  fontWeight: 500,
-                                  backgroundColor:
-                                    visit.estado === TechnicalVisitStatus.PROGRAMADA
-                                      ? "#dbeafe"
-                                      : visit.estado === TechnicalVisitStatus.REALIZADA
-                                      ? "#d1fae5"
-                                      : visit.estado === TechnicalVisitStatus.REPROGRAMADA
-                                      ? "#fed7aa"
-                                      : "#fee2e2",
-                                  color:
-                                    visit.estado === TechnicalVisitStatus.PROGRAMADA
-                                      ? "#1e40af"
-                                      : visit.estado === TechnicalVisitStatus.REALIZADA
-                                      ? "#065f46"
-                                      : visit.estado === TechnicalVisitStatus.REPROGRAMADA
-                                      ? "#9a3412"
-                                      : "#991b1b",
-                                },
-                              }}
-                            />
-                          </Table.Td>
-                          <Table.Td>
-                            <Group gap="xs">
-                              <ActionIcon
+                        <Paper key={visit.id} p="md" withBorder radius="md" className="bg-gray-50">
+                          <Stack gap="xs">
+                            <Group justify="space-between" align="flex-start">
+                              <div style={{ flex: 1 }}>
+                                <Text size="sm" fw={600} mb={4}>
+                                  {visit.nombreCliente}
+                                </Text>
+                                <Text size="xs" c="dimmed">
+                                  {visit.contacto}
+                                </Text>
+                              </div>
+                              <Badge
+                                color={
+                                  visit.estado === TechnicalVisitStatus.PROGRAMADA
+                                    ? "blue"
+                                    : visit.estado === TechnicalVisitStatus.REALIZADA
+                                    ? "green"
+                                    : visit.estado === TechnicalVisitStatus.REPROGRAMADA
+                                    ? "orange"
+                                    : "red"
+                                }
                                 variant="light"
-                                color="indigo"
-                                onClick={() => handleViewDetails(visit)}
-                                size="lg"
                               >
-                                <IconEye size={16} />
-                              </ActionIcon>
-                              <ActionIcon
-                                variant="light"
-                                color="blue"
-                                onClick={() => handleOpenModal(visit.id)}
-                              >
-                                <IconEdit size={16} />
-                              </ActionIcon>
-                              <ActionIcon
-                                variant="light"
-                                color="red"
-                                onClick={() => handleDelete(visit.id)}
-                              >
-                                <IconTrash size={16} />
-                              </ActionIcon>
+                                {visit.estado === TechnicalVisitStatus.PROGRAMADA
+                                  ? "Programada"
+                                  : visit.estado === TechnicalVisitStatus.REALIZADA
+                                  ? "Realizada"
+                                  : visit.estado === TechnicalVisitStatus.REPROGRAMADA
+                                  ? "Reprogramada"
+                                  : "Cancelada"}
+                              </Badge>
                             </Group>
-                          </Table.Td>
-                        </Table.Tr>
+
+                            <Divider />
+
+                            <Grid gutter="xs">
+                              <Grid.Col span={12}>
+                                <Group gap={4}>
+                                  <IconMapPin size={14} className="text-gray-500" />
+                                  <Text size="xs" c="dimmed">
+                                    {visit.direccion}
+                                  </Text>
+                                </Group>
+                              </Grid.Col>
+
+                              <Grid.Col span={6}>
+                                <Text size="xs" c="dimmed">
+                                  Fecha Visita
+                                </Text>
+                                <Text size="xs" fw={500}>
+                                  {new Date(visit.fechaVisita).toLocaleDateString("es-CL")}
+                                </Text>
+                              </Grid.Col>
+
+                              <Grid.Col span={6}>
+                                <Text size="xs" c="dimmed">
+                                  Hora
+                                </Text>
+                                <Text size="xs" fw={500}>
+                                  {new Date(visit.horaVisita).toLocaleTimeString("es-CL", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </Text>
+                              </Grid.Col>
+
+                              <Grid.Col span={12}>
+                                <Text size="xs" c="dimmed">
+                                  Asignado a
+                                </Text>
+                                <Text size="xs" fw={500} c={visit.assignedUser ? "blue" : "dimmed"}>
+                                  {visit.assignedUser?.name || "Sin asignar"}
+                                </Text>
+                              </Grid.Col>
+                            </Grid>
+
+                            <Divider />
+
+                            <Group justify="space-between" wrap="nowrap">
+                              <Select
+                                value={visit.estado}
+                                onChange={(value) =>
+                                  value && handleStatusChange(visit.id, value as TechnicalVisitStatus)
+                                }
+                                data={[
+                                  { value: TechnicalVisitStatus.PROGRAMADA, label: "Programada" },
+                                  { value: TechnicalVisitStatus.REALIZADA, label: "Realizada" },
+                                  { value: TechnicalVisitStatus.REPROGRAMADA, label: "Reprogramada" },
+                                  { value: TechnicalVisitStatus.CANCELADA, label: "Cancelada" },
+                                ]}
+                                size="xs"
+                                style={{ flex: 1 }}
+                                styles={{
+                                  input: {
+                                    fontWeight: 500,
+                                    backgroundColor:
+                                      visit.estado === TechnicalVisitStatus.PROGRAMADA
+                                        ? "#dbeafe"
+                                        : visit.estado === TechnicalVisitStatus.REALIZADA
+                                        ? "#d1fae5"
+                                        : visit.estado === TechnicalVisitStatus.REPROGRAMADA
+                                        ? "#fed7aa"
+                                        : "#fee2e2",
+                                    color:
+                                      visit.estado === TechnicalVisitStatus.PROGRAMADA
+                                        ? "#1e40af"
+                                        : visit.estado === TechnicalVisitStatus.REALIZADA
+                                        ? "#065f46"
+                                        : visit.estado === TechnicalVisitStatus.REPROGRAMADA
+                                        ? "#9a3412"
+                                        : "#991b1b",
+                                  },
+                                }}
+                              />
+                              <Group gap={4}>
+                                <ActionIcon
+                                  variant="light"
+                                  color="indigo"
+                                  onClick={() => handleViewDetails(visit)}
+                                  size="sm"
+                                >
+                                  <IconEye size={14} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  variant="light"
+                                  color="blue"
+                                  onClick={() => handleOpenModal(visit.id)}
+                                  size="sm"
+                                >
+                                  <IconEdit size={14} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  variant="light"
+                                  color="red"
+                                  onClick={() => handleDelete(visit.id)}
+                                  size="sm"
+                                >
+                                  <IconTrash size={14} />
+                                </ActionIcon>
+                              </Group>
+                            </Group>
+                          </Stack>
+                        </Paper>
                       ))}
-                    </Table.Tbody>
-                  </Table>
-                </div>
+                    </Stack>
+                  </Box>
+                </>
               ) : (
                 <Center className="py-12">
                   <Stack align="center" gap="md">

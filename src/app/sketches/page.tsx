@@ -293,9 +293,9 @@ function SketchesPageContent() {
   };
 
   return (
-    <Container fluid px="md" py="md" style={{ maxWidth: '100%', height: '100vh', overflow: 'hidden' }}>
-      <Group justify="space-between" mb="lg">
-        <Group>
+    <Container fluid px="md" py="md" style={{ maxWidth: '100%', minHeight: '100vh' }}>
+      <Group justify="space-between" mb="lg" wrap="wrap">
+        <Group wrap="nowrap">
           <ActionIcon
             variant="light"
             size="lg"
@@ -304,26 +304,29 @@ function SketchesPageContent() {
             <IconArrowLeft size={20} />
           </ActionIcon>
           <div>
-            <Group gap="sm" align="center">
-              <Title order={2}>Cuaderno Digital de Carpas Guajardo</Title>
+            <Group gap="sm" align="center" wrap="wrap">
+              <Title order={2} style={{ fontSize: 'clamp(1.2rem, 4vw, 1.5rem)' }}>
+                Cuaderno Digital de Carpas Guajardo
+              </Title>
               {currentSketchId && sketchName && (
                   <MantineText size="sm" fw={500} c="blue.7">
                     Editando: {sketchName}
                   </MantineText>
               )}
             </Group>
-            <MantineText size="sm" c="dimmed">
+            <MantineText size="sm" c="dimmed" style={{ display: 'none', '@media (min-width: 768px)': { display: 'block' } }}>
               {currentSketchId 
                 ? "Realiza cambios y guarda para actualizar el boceto" 
                 : "Crea bocetos digitales de las carpas con medidas"}
             </MantineText>
           </div>
         </Group>
-        <Group>
+        <Group wrap="wrap" style={{ flexGrow: 0, flexShrink: 0 }}>
           <Button
             leftSection={<IconPlus size={16} />}
             onClick={handleNew}
             variant="light"
+            size="sm"
           >
             Nuevo
           </Button>
@@ -331,6 +334,7 @@ function SketchesPageContent() {
             leftSection={<IconEdit size={16} />}
             onClick={() => setLoadModalOpen(true)}
             variant="light"
+            size="sm"
           >
             Cargar
           </Button>
@@ -338,6 +342,7 @@ function SketchesPageContent() {
             leftSection={<IconDeviceFloppy size={16} />}
             onClick={() => setSaveModalOpen(true)}
             disabled={elements.length === 0}
+            size="sm"
           >
             {currentSketchId ? "Actualizar" : "Guardar"}
           </Button>

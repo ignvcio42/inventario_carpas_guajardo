@@ -58,9 +58,23 @@ export default function SketchEditor({
   const transformerRef = useRef<Konva.Transformer>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [scale, setScale] = useState(1);
-  // Canvas fijo de 2000x1500 para tener mucho espacio
-  const canvasWidth = 2000;
-  const canvasHeight = 1500;
+  
+  // Canvas responsive - más pequeño en móvil, más grande en desktop
+  const [canvasWidth, setCanvasWidth] = useState(2000);
+  const [canvasHeight, setCanvasHeight] = useState(1500);
+
+  // Detectar tamaño de pantalla y ajustar canvas
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      const isMobile = window.innerWidth < 768;
+      setCanvasWidth(isMobile ? 1200 : 2000);
+      setCanvasHeight(isMobile ? 900 : 1500);
+    };
+
+    updateCanvasSize();
+    window.addEventListener('resize', updateCanvasSize);
+    return () => window.removeEventListener('resize', updateCanvasSize);
+  }, []);
   
   // Estado para controlar el modo de arrastre
   const [isDraggingCanvas, setIsDraggingCanvas] = useState(false);
@@ -522,74 +536,85 @@ export default function SketchEditor({
 
   return (
     <Stack gap="md">
-      <Paper shadow="sm" p="md" withBorder>
-        <Group mb="md" justify="space-between">
-          <Group>
+      <Paper shadow="sm" p="xs" withBorder style={{ position: 'sticky', top: 0, zIndex: 10, background: 'white' }}>
+        <Group mb="xs" justify="space-between" wrap="wrap" gap="xs">
+          <Group gap="xs" wrap="wrap">
             <Button
               variant={tool === "select" ? "filled" : "light"}
               onClick={() => setTool("select")}
+              size="xs"
+              style={{ fontSize: '0.75rem', padding: '4px 12px' }}
             >
               Seleccionar
             </Button>
             <Button
               variant={tool === "rectangle" ? "filled" : "light"}
-              leftSection={<IconSquarePlus size={16} />}
+              leftSection={<IconSquarePlus size={14} />}
               onClick={() => setTool("rectangle")}
+              size="xs"
+              style={{ fontSize: '0.75rem', padding: '4px 12px' }}
             >
               Rectángulo
             </Button>
             <Button
               variant={tool === "text" ? "filled" : "light"}
-              leftSection={<IconTextPlus size={16} />}
+              leftSection={<IconTextPlus size={14} />}
               onClick={() => setTool("text")}
+              size="xs"
+              style={{ fontSize: '0.75rem', padding: '4px 12px' }}
             >
               Texto
             </Button>
           </Group>
           
-          <Group gap="xs">
+          <Group gap="xs" wrap="nowrap">
             <ActionIcon
               variant="light"
               onClick={handleUndo}
               disabled={historyStep <= 0}
               title="Deshacer (Ctrl+Z)"
+              size="sm"
             >
-              <IconArrowBackUp size={18} />
+              <IconArrowBackUp size={16} />
             </ActionIcon>
             <ActionIcon
               variant="light"
               onClick={handleRedo}
               disabled={historyStep >= history.length - 1}
               title="Rehacer (Ctrl+Y)"
+              size="sm"
             >
-              <IconArrowForwardUp size={18} />
+              <IconArrowForwardUp size={16} />
             </ActionIcon>
             
-            <div style={{ width: 1, height: 24, background: '#e0e0e0', margin: '0 8px' }} />
+            <div style={{ width: 1, height: 20, background: '#e0e0e0', margin: '0 4px' }} />
             
             <ActionIcon
               variant="light"
               onClick={handleZoomOut}
               title="Alejar (Zoom Out)"
+              size="sm"
             >
-              <IconZoomOut size={18} />
+              <IconZoomOut size={16} />
             </ActionIcon>
-            <MantineText size="sm" fw={500} style={{ minWidth: 50, textAlign: 'center' }}>
+            <MantineText size="xs" fw={500} style={{ minWidth: 40, textAlign: 'center' }}>
               {Math.round(scale * 100)}%
             </MantineText>
             <ActionIcon
               variant="light"
               onClick={handleZoomIn}
               title="Acercar (Zoom In)"
+              size="sm"
             >
-              <IconZoomIn size={18} />
+              <IconZoomIn size={16} />
             </ActionIcon>
             <ActionIcon
               variant="light"
               onClick={handleZoomReset}
               title="Restablecer y Centrar Vista"
+              size="sm"
             >
-              <IconZoomReset size={18} />
+              <IconZoomReset size={16} />
             </ActionIcon>
           </Group>
         </Group>
@@ -597,54 +622,58 @@ export default function SketchEditor({
         {selectedIds.length > 0 && (
           <Paper p="xs" withBorder bg="blue.0">
             <Stack gap="xs">
-              <Group justify="space-between">
-                <MantineText size="sm" fw={500}>
+              <Group justify="space-between" wrap="nowrap">
+                <MantineText size="xs" fw={500} style={{ fontSize: '0.75rem' }}>
                   {hasMultipleSelection 
-                    ? `${selectedIds.length} elementos seleccionados`
-                    : selectedElement?.type === "rectangle" && "Rectángulo seleccionado"
-                    || selectedElement?.type === "text" && "Texto seleccionado"
-                    || selectedElement?.type === "measurement" && "Medida seleccionada"}
+                    ? `${selectedIds.length} elementos`
+                    : selectedElement?.type === "rectangle" && "Rectángulo"
+                    || selectedElement?.type === "text" && "Texto"
+                    || selectedElement?.type === "measurement" && "Medida"}
                 </MantineText>
                 <ActionIcon
                   color="red"
                   variant="light"
                   onClick={handleDelete}
-                  size="lg"
+                  size="sm"
                 >
-                  <IconTrash size={16} />
+                  <IconTrash size={14} />
                 </ActionIcon>
               </Group>
               
               {!hasMultipleSelection && selectedElement?.type === "rectangle" && (
                 <>
-                  <Group gap="xs" wrap="wrap">
+                  <Group gap="4px" wrap="wrap">
                     <Button
                       size="xs"
                       variant="light"
                       onClick={() => addMeasurement(selectedElement, "top")}
+                      style={{ fontSize: '0.7rem', padding: '4px 8px', height: 'auto' }}
                     >
-                      Medida Arriba
+                      ↑ Arriba
                     </Button>
                     <Button
                       size="xs"
                       variant="light"
                       onClick={() => addMeasurement(selectedElement, "right")}
+                      style={{ fontSize: '0.7rem', padding: '4px 8px', height: 'auto' }}
                     >
-                      Medida Derecha
+                      → Derecha
                     </Button>
                     <Button
                       size="xs"
                       variant="light"
                       onClick={() => addMeasurement(selectedElement, "bottom")}
+                      style={{ fontSize: '0.7rem', padding: '4px 8px', height: 'auto' }}
                     >
-                      Medida Abajo
+                      ↓ Abajo
                     </Button>
                     <Button
                       size="xs"
                       variant="light"
                       onClick={() => addMeasurement(selectedElement, "left")}
+                      style={{ fontSize: '0.7rem', padding: '4px 8px', height: 'auto' }}
                     >
-                      Medida Izquierda
+                      ← Izquierda
                     </Button>
                   </Group>
                   
@@ -670,7 +699,15 @@ export default function SketchEditor({
           </Paper>
         )}
         
-        <MantineText size="xs" c="dimmed" ta="center">
+        <MantineText 
+          size="xs" 
+          c="dimmed" 
+          ta="center"
+          style={{ 
+            display: 'none',
+            '@media (min-width: 768px)': { display: 'block' }
+          }}
+        >
           💡 Tips: Selecciona un rectángulo para cambiar su color | Doble click en texto para editar | Arrastra para mover | Ctrl+Z = deshacer
         </MantineText>
       </Paper>
@@ -680,11 +717,13 @@ export default function SketchEditor({
         p={0}
         withBorder 
         style={{ 
-          overflow: "hidden",
-          height: "calc(100vh - 350px)",
-          minHeight: "500px",
+          overflow: "auto",
+          height: "70vh",
+          minHeight: "400px",
+          maxHeight: "800px",
           position: "relative",
           background: "#f8f9fa",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         <Stage
