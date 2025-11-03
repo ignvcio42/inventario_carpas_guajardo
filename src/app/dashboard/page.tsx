@@ -25,9 +25,6 @@ import {
   Divider,
   ScrollArea,
   SegmentedControl,
-  ActionIcon,
-  Indicator,
-  Popover,
 } from "@mantine/core";
 import { Calendar } from "@mantine/dates";
 import {
@@ -46,11 +43,8 @@ import {
   IconMapPin,
   IconUser,
   IconTrendingUp,
-  IconTrendingDown,
   IconList,
   IconCalendar,
-  IconChevronLeft,
-  IconChevronRight,
 } from "@tabler/icons-react";
 import { api } from "~/trpc/react";
 
@@ -180,11 +174,12 @@ export default function Dashboard() {
     // Esto evita que fechas como "2025-10-29T00:00:00.000Z" se conviertan a 28 en zonas horarias negativas
     if (typeof dateInput === "string") {
       // Si es un string ISO con Z o timezone, usar UTC para obtener la fecha
+      const isoDateRegex = /\d{4}-\d{2}-\d{2}T/;
       if (
         dateInput.includes("T") ||
         dateInput.includes("Z") ||
         dateInput.includes("+") ||
-        dateInput.match(/\d{4}-\d{2}-\d{2}T/)
+        isoDateRegex.exec(dateInput)
       ) {
         const year = date.getUTCFullYear();
         const month = date.getUTCMonth();
@@ -193,11 +188,12 @@ export default function Dashboard() {
         return new Date(year, month, day);
       }
       // Si es solo una fecha (YYYY-MM-DD), extraer directamente
-      const isoMatch = dateInput.match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (isoMatch && isoMatch[1] && isoMatch[2] && isoMatch[3]) {
-        const year = parseInt(isoMatch[1]!, 10);
-        const month = parseInt(isoMatch[2]!, 10) - 1;
-        const day = parseInt(isoMatch[3]!, 10);
+      const dateRegex = /^(\d{4})-(\d{2})-(\d{2})/;
+      const isoMatch = dateRegex.exec(dateInput);
+      if (isoMatch?.[1] && isoMatch[2] && isoMatch[3]) {
+        const year = parseInt(isoMatch[1], 10);
+        const month = parseInt(isoMatch[2], 10) - 1;
+        const day = parseInt(isoMatch[3], 10);
         return new Date(year, month, day);
       }
     }
@@ -255,22 +251,6 @@ export default function Dashboard() {
     return getDayEvents(selectedDate);
   };
 
-  const goToPreviousMonth = () => {
-    setCurrentMonth(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
-    );
-  };
-
-  const goToNextMonth = () => {
-    setCurrentMonth(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
-    );
-  };
-
-  const goToToday = () => {
-    setCurrentMonth(new Date());
-  };
-
   // Funciones para visitas técnicas
   const getDayVisits = (date: Date) => {
     if (!upcomingVisits) return [];
@@ -290,22 +270,6 @@ export default function Dashboard() {
   const getVisitsForSelectedDate = () => {
     if (!selectedVisitDate) return [];
     return getDayVisits(selectedVisitDate);
-  };
-
-  const goToPreviousVisitsMonth = () => {
-    setCurrentVisitsMonth(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
-    );
-  };
-
-  const goToNextVisitsMonth = () => {
-    setCurrentVisitsMonth(
-      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
-    );
-  };
-
-  const goToTodayVisits = () => {
-    setCurrentVisitsMonth(new Date());
   };
 
   // Calcular porcentaje de eventos por estado
@@ -669,8 +633,6 @@ export default function Dashboard() {
                               const isSelected =
                                 selectedDate &&
                                 isSameDay(normalizedDate, selectedDate);
-                              const eventsCount =
-                                getDayEvents(normalizedDate).length;
 
                               return {
                                 onClick: () => setSelectedDate(normalizedDate),
