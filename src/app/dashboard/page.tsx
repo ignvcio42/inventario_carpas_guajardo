@@ -4,15 +4,15 @@ import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import MainLayout from "../_components/main-layout";
-import { 
-  Grid, 
-  Card, 
-  Text, 
-  Group, 
-  Badge, 
-  Button, 
-  Stack, 
-  Title, 
+import {
+  Grid,
+  Card,
+  Text,
+  Group,
+  Badge,
+  Button,
+  Stack,
+  Title,
   Box,
   ThemeIcon,
   Loader,
@@ -28,12 +28,12 @@ import {
   ActionIcon,
   Indicator,
   Popover,
-} from '@mantine/core';
-import { Calendar } from '@mantine/dates';
-import { 
-  IconCalendarEvent, 
-  IconPackage, 
-  IconTool, 
+} from "@mantine/core";
+import { Calendar } from "@mantine/dates";
+import {
+  IconCalendarEvent,
+  IconPackage,
+  IconTool,
   IconCurrencyDollar,
   IconPlus,
   IconClock,
@@ -51,14 +51,15 @@ import {
   IconCalendar,
   IconChevronLeft,
   IconChevronRight,
-} from '@tabler/icons-react';
+} from "@tabler/icons-react";
 import { api } from "~/trpc/react";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const { data: unreadCount } = api.notification.getUnreadCount.useQuery();
-  const { data: stats, isLoading: statsLoading } = api.dashboard.getStats.useQuery();
+  const { data: stats, isLoading: statsLoading } =
+    api.dashboard.getStats.useQuery();
   const { data: recentActivity } = api.dashboard.getRecentActivity.useQuery();
   const { data: upcomingEvents } = api.dashboard.getUpcomingEvents.useQuery();
   const { data: upcomingVisits } = api.dashboard.getUpcomingVisits.useQuery();
@@ -84,7 +85,9 @@ export default function Dashboard() {
         <Center className="h-64">
           <Stack align="center" gap="md">
             <Loader size="lg" />
-            <Text size="sm" c="dimmed">Cargando dashboard...</Text>
+            <Text size="sm" c="dimmed">
+              Cargando dashboard...
+            </Text>
           </Stack>
         </Center>
       </MainLayout>
@@ -93,31 +96,49 @@ export default function Dashboard() {
 
   const getStatusColor = (estado: string) => {
     switch (estado) {
-      case "PENDIENTE": return "yellow";
-      case "EN_PROCESO": return "blue";
-      case "COMPLETADO": return "green";
-      case "CANCELADO": return "red";
-      case "PROGRAMADA": return "cyan";
-      case "REALIZADA": return "green";
-      case "REPROGRAMADA": return "orange";
-      case "CANCELADA": return "red";
-      default: return "gray";
+      case "PENDIENTE":
+        return "yellow";
+      case "EN_PROCESO":
+        return "blue";
+      case "COMPLETADO":
+        return "green";
+      case "CANCELADO":
+        return "red";
+      case "PROGRAMADA":
+        return "cyan";
+      case "REALIZADA":
+        return "green";
+      case "REPROGRAMADA":
+        return "orange";
+      case "CANCELADA":
+        return "red";
+      default:
+        return "gray";
     }
   };
 
   const getStatusIcon = (estado: string) => {
     switch (estado) {
-      case "PENDIENTE": return <IconHourglass size={16} />;
-      case "EN_PROCESO": return <IconClock size={16} />;
-      case "COMPLETADO": return <IconCircleCheck size={16} />;
-      case "CANCELADO": return <IconX size={16} />;
-      case "PROGRAMADA": return <IconCalendarEvent size={16} />;
-      case "REALIZADA": return <IconCircleCheck size={16} />;
-      default: return <IconClock size={16} />;
+      case "PENDIENTE":
+        return <IconHourglass size={16} />;
+      case "EN_PROCESO":
+        return <IconClock size={16} />;
+      case "COMPLETADO":
+        return <IconCircleCheck size={16} />;
+      case "CANCELADO":
+        return <IconX size={16} />;
+      case "PROGRAMADA":
+        return <IconCalendarEvent size={16} />;
+      case "REALIZADA":
+        return <IconCircleCheck size={16} />;
+      default:
+        return <IconClock size={16} />;
     }
   };
 
-  const formatCurrency = (amount: number | bigint | { toString: () => string }) => {
+  const formatCurrency = (
+    amount: number | bigint | { toString: () => string },
+  ) => {
     return new Intl.NumberFormat("es-CL", {
       style: "currency",
       currency: "CLP",
@@ -150,43 +171,79 @@ export default function Dashboard() {
     );
   };
 
-  const getLocalDate = (dateString: Date | string) => {
-    const date = new Date(dateString);
+  const getLocalDate = (dateInput: Date | string | null | undefined) => {
+    if (!dateInput) return new Date();
+
+    const date = new Date(dateInput);
+
+    // Si es un string ISO (viene de la base de datos), usar métodos UTC para obtener la fecha correcta
+    // Esto evita que fechas como "2025-10-29T00:00:00.000Z" se conviertan a 28 en zonas horarias negativas
+    if (typeof dateInput === "string") {
+      // Si es un string ISO con Z o timezone, usar UTC para obtener la fecha
+      if (
+        dateInput.includes("T") ||
+        dateInput.includes("Z") ||
+        dateInput.includes("+") ||
+        dateInput.match(/\d{4}-\d{2}-\d{2}T/)
+      ) {
+        const year = date.getUTCFullYear();
+        const month = date.getUTCMonth();
+        const day = date.getUTCDate();
+        // Crear fecha local con los valores UTC (esto preserva la fecha sin importar timezone)
+        return new Date(year, month, day);
+      }
+      // Si es solo una fecha (YYYY-MM-DD), extraer directamente
+      const isoMatch = dateInput.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (isoMatch && isoMatch[1] && isoMatch[2] && isoMatch[3]) {
+        const year = parseInt(isoMatch[1]!, 10);
+        const month = parseInt(isoMatch[2]!, 10) - 1;
+        const day = parseInt(isoMatch[3]!, 10);
+        return new Date(year, month, day);
+      }
+    }
+
+    // Para objetos Date (como los que vienen del calendario), usar métodos locales
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   };
 
   const getDayEvents = (date: Date) => {
     if (!upcomingEvents) return [];
-    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    
+    // Normalizar la fecha de búsqueda de la misma manera
+    const checkDate = getLocalDate(date);
+
     return upcomingEvents
       .map((event) => {
         const montajeDate = getLocalDate(event.horaInicio);
         const eventoStartDate = getLocalDate(event.startDate);
         const eventoEndDate = getLocalDate(event.endDate);
         const desmonteDate = getLocalDate(event.horaTermino);
-        
+
         const types = [];
-        
+
         // Verificar si es día de montaje
         if (checkDate.getTime() === montajeDate.getTime()) {
-          types.push('montaje');
+          types.push("montaje");
         }
-        
+
         // Verificar si está dentro del rango del evento
-        if (checkDate.getTime() >= eventoStartDate.getTime() && 
-            checkDate.getTime() <= eventoEndDate.getTime()) {
-          types.push('evento');
+        if (
+          checkDate.getTime() >= eventoStartDate.getTime() &&
+          checkDate.getTime() <= eventoEndDate.getTime()
+        ) {
+          types.push("evento");
         }
-        
+
         // Verificar si es día de desmontaje
         if (checkDate.getTime() === desmonteDate.getTime()) {
-          types.push('desmontaje');
+          types.push("desmontaje");
         }
-        
+
         return types.length > 0 ? { ...event, types } : null;
       })
-      .filter((event): event is typeof upcomingEvents[0] & { types: string[] } => event !== null);
+      .filter(
+        (event): event is (typeof upcomingEvents)[0] & { types: string[] } =>
+          event !== null,
+      );
   };
 
   const hasEventsOnDay = (date: Date) => {
@@ -199,11 +256,15 @@ export default function Dashboard() {
   };
 
   const goToPreviousMonth = () => {
-    setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setCurrentMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
+    );
   };
 
   const goToNextMonth = () => {
-    setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setCurrentMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
+    );
   };
 
   const goToToday = () => {
@@ -213,8 +274,9 @@ export default function Dashboard() {
   // Funciones para visitas técnicas
   const getDayVisits = (date: Date) => {
     if (!upcomingVisits) return [];
-    const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    
+    // Normalizar la fecha de búsqueda de la misma manera que las fechas de las visitas
+    const checkDate = getLocalDate(date);
+
     return upcomingVisits.filter((visit) => {
       const visitDate = getLocalDate(visit.fechaVisita);
       return checkDate.getTime() === visitDate.getTime();
@@ -231,11 +293,15 @@ export default function Dashboard() {
   };
 
   const goToPreviousVisitsMonth = () => {
-    setCurrentVisitsMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setCurrentVisitsMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
+    );
   };
 
   const goToNextVisitsMonth = () => {
-    setCurrentVisitsMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setCurrentVisitsMonth(
+      (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
+    );
   };
 
   const goToTodayVisits = () => {
@@ -243,20 +309,28 @@ export default function Dashboard() {
   };
 
   // Calcular porcentaje de eventos por estado
-  const totalEvents = eventsByStatus?.reduce((sum, item) => sum + item.count, 0) || 0;
-  const completedEvents = eventsByStatus?.find(item => item.status === "COMPLETADO")?.count || 0;
-  const completionRate = totalEvents > 0 ? (completedEvents / totalEvents) * 100 : 0;
+  const totalEvents =
+    eventsByStatus?.reduce((sum, item) => sum + item.count, 0) || 0;
+  const completedEvents =
+    eventsByStatus?.find((item) => item.status === "COMPLETADO")?.count || 0;
+  const completionRate =
+    totalEvents > 0 ? (completedEvents / totalEvents) * 100 : 0;
 
   return (
     <MainLayout>
       <div className="p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="mx-auto max-w-7xl">
           <Stack gap="lg">
             {/* Welcome Section */}
-            <Card shadow="sm" padding="lg" radius="md" className="bg-gradient-to-r from-indigo-500 to-purple-600">
+            <Card
+              shadow="sm"
+              padding="lg"
+              radius="md"
+              className="bg-gradient-to-r from-indigo-500 to-purple-600"
+            >
               <Group justify="space-between" align="center">
                 <div>
-                  <Title order={1} className="text-white mb-2">
+                  <Title order={1} className="mb-2 text-white">
                     ¡Bienvenido, {session?.user?.name}! 👋
                   </Title>
                   <Text className="text-indigo-100" size="sm">
@@ -271,43 +345,82 @@ export default function Dashboard() {
 
             {/* Stats Cards */}
             <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="md">
-              <Card shadow="sm" padding="lg" radius="md" className="bg-white border-l-4 border-blue-500">
+              <Card
+                shadow="sm"
+                padding="lg"
+                radius="md"
+                className="border-l-4 border-blue-500 bg-white"
+              >
                 <Group justify="space-between" mb="xs">
-                  <Text size="sm" c="dimmed" fw={500}>Eventos Activos</Text>
+                  <Text size="sm" c="dimmed" fw={500}>
+                    Eventos Activos
+                  </Text>
                   <ThemeIcon size="lg" radius="md" color="blue" variant="light">
                     <IconCalendarEvent size={20} />
                   </ThemeIcon>
                 </Group>
-                <Text size="xl" fw={700} c="blue">{stats?.activeEvents || 0}</Text>
+                <Text size="xl" fw={700} c="blue">
+                  {stats?.activeEvents || 0}
+                </Text>
                 <Text size="xs" c="dimmed" mt="xs">
                   Pendientes y en proceso
                 </Text>
               </Card>
 
-              <Card shadow="sm" padding="lg" radius="md" className="bg-white border-l-4 border-green-500">
+              <Card
+                shadow="sm"
+                padding="lg"
+                radius="md"
+                className="border-l-4 border-green-500 bg-white"
+              >
                 <Group justify="space-between" mb="xs">
-                  <Text size="sm" c="dimmed" fw={500}>Items en Inventario</Text>
-                  <ThemeIcon size="lg" radius="md" color="green" variant="light">
+                  <Text size="sm" c="dimmed" fw={500}>
+                    Items en Inventario
+                  </Text>
+                  <ThemeIcon
+                    size="lg"
+                    radius="md"
+                    color="green"
+                    variant="light"
+                  >
                     <IconPackage size={20} />
                   </ThemeIcon>
                 </Group>
-                <Text size="xl" fw={700} c="green">{stats?.totalItems || 0}</Text>
+                <Text size="xl" fw={700} c="green">
+                  {stats?.totalItems || 0}
+                </Text>
                 <Group gap="xs" mt="xs">
                   {stats?.lowStockItems && stats.lowStockItems > 0 ? (
                     <>
                       <IconAlertCircle size={14} className="text-red-500" />
-                      <Text size="xs" c="red">{stats.lowStockItems} con stock bajo</Text>
+                      <Text size="xs" c="red">
+                        {stats.lowStockItems} con stock bajo
+                      </Text>
                     </>
                   ) : (
-                    <Text size="xs" c="dimmed">Stock normal</Text>
+                    <Text size="xs" c="dimmed">
+                      Stock normal
+                    </Text>
                   )}
                 </Group>
               </Card>
 
-              <Card shadow="sm" padding="lg" radius="md" className="bg-white border-l-4 border-purple-500">
+              <Card
+                shadow="sm"
+                padding="lg"
+                radius="md"
+                className="border-l-4 border-purple-500 bg-white"
+              >
                 <Group justify="space-between" mb="xs">
-                  <Text size="sm" c="dimmed" fw={500}>Ingresos del Mes</Text>
-                  <ThemeIcon size="lg" radius="md" color="purple" variant="light">
+                  <Text size="sm" c="dimmed" fw={500}>
+                    Ingresos del Mes
+                  </Text>
+                  <ThemeIcon
+                    size="lg"
+                    radius="md"
+                    color="purple"
+                    variant="light"
+                  >
                     <IconCurrencyDollar size={20} />
                   </ThemeIcon>
                 </Group>
@@ -319,14 +432,28 @@ export default function Dashboard() {
                 </Text>
               </Card>
 
-              <Card shadow="sm" padding="lg" radius="md" className="bg-white border-l-4 border-orange-500">
+              <Card
+                shadow="sm"
+                padding="lg"
+                radius="md"
+                className="border-l-4 border-orange-500 bg-white"
+              >
                 <Group justify="space-between" mb="xs">
-                  <Text size="sm" c="dimmed" fw={500}>Visitas Programadas</Text>
-                  <ThemeIcon size="lg" radius="md" color="orange" variant="light">
+                  <Text size="sm" c="dimmed" fw={500}>
+                    Visitas Programadas
+                  </Text>
+                  <ThemeIcon
+                    size="lg"
+                    radius="md"
+                    color="orange"
+                    variant="light"
+                  >
                     <IconTool size={20} />
                   </ThemeIcon>
                 </Group>
-                <Text size="xl" fw={700} c="orange">{stats?.scheduledVisits || 0}</Text>
+                <Text size="xl" fw={700} c="orange">
+                  {stats?.scheduledVisits || 0}
+                </Text>
                 <Text size="xs" c="dimmed" mt="xs">
                   Próximas visitas técnicas
                 </Text>
@@ -334,7 +461,11 @@ export default function Dashboard() {
             </SimpleGrid>
 
             {/* Info Card - Calendario */}
-            <Paper p="md" radius="md" className="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-500">
+            <Paper
+              p="md"
+              radius="md"
+              className="border-l-4 border-blue-500 bg-gradient-to-r from-blue-50 to-purple-50"
+            >
               <Group gap="sm">
                 <ThemeIcon size="lg" radius="md" color="blue" variant="light">
                   <IconCalendarEvent size={24} />
@@ -344,9 +475,12 @@ export default function Dashboard() {
                     📅 Nuevo Sistema de Calendario
                   </Text>
                   <Text size="xs" c="dimmed">
-                    El calendario ahora muestra claramente las fechas de <strong style={{ color: '#fd7e14' }}>montaje</strong>, 
-                    el <strong style={{ color: '#228be6' }}>evento</strong> y el <strong style={{ color: '#be4bdb' }}>desmontaje</strong> con 
-                    indicadores de colores diferenciados. Haz clic en cualquier día para ver los detalles.
+                    El calendario ahora muestra claramente las fechas de{" "}
+                    <strong style={{ color: "#fd7e14" }}>montaje</strong>, el{" "}
+                    <strong style={{ color: "#228be6" }}>evento</strong> y el{" "}
+                    <strong style={{ color: "#be4bdb" }}>desmontaje</strong> con
+                    indicadores de colores diferenciados. Haz clic en cualquier
+                    día para ver los detalles.
                   </Text>
                 </div>
               </Group>
@@ -354,16 +488,18 @@ export default function Dashboard() {
 
             {/* Quick Actions */}
             <Card shadow="sm" padding="lg" radius="md" className="bg-white">
-              <Title order={3} className="text-gray-900 mb-4">Acciones Rápidas</Title>
+              <Title order={3} className="mb-4 text-gray-900">
+                Acciones Rápidas
+              </Title>
               <Grid>
                 <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
                   <Button
                     variant="gradient"
-                    gradient={{ from: 'blue', to: 'cyan', deg: 90 }}
+                    gradient={{ from: "blue", to: "cyan", deg: 90 }}
                     fullWidth
                     size="lg"
                     leftSection={<IconPlus size={20} />}
-                    onClick={() => router.push('/eventos')}
+                    onClick={() => router.push("/eventos")}
                   >
                     Nuevo Evento
                   </Button>
@@ -372,11 +508,11 @@ export default function Dashboard() {
                 <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
                   <Button
                     variant="gradient"
-                    gradient={{ from: 'orange', to: 'red', deg: 90 }}
+                    gradient={{ from: "orange", to: "red", deg: 90 }}
                     fullWidth
                     size="lg"
                     leftSection={<IconTool size={20} />}
-                    onClick={() => router.push('/technical-visits')}
+                    onClick={() => router.push("/technical-visits")}
                   >
                     Visita Técnica
                   </Button>
@@ -385,11 +521,11 @@ export default function Dashboard() {
                 <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
                   <Button
                     variant="gradient"
-                    gradient={{ from: 'teal', to: 'lime', deg: 90 }}
+                    gradient={{ from: "teal", to: "lime", deg: 90 }}
                     fullWidth
                     size="lg"
                     leftSection={<IconPackage size={20} />}
-                    onClick={() => router.push('/inventory')}
+                    onClick={() => router.push("/inventory")}
                   >
                     Agregar Item
                   </Button>
@@ -398,11 +534,11 @@ export default function Dashboard() {
                 <Grid.Col span={{ base: 12, md: 6, lg: 3 }}>
                   <Button
                     variant="gradient"
-                    gradient={{ from: 'indigo', to: 'purple', deg: 90 }}
+                    gradient={{ from: "indigo", to: "purple", deg: 90 }}
                     fullWidth
                     size="lg"
                     leftSection={<IconBell size={20} />}
-                    onClick={() => router.push('/notifications')}
+                    onClick={() => router.push("/notifications")}
                     rightSection={
                       unreadCount && unreadCount > 0 ? (
                         <Badge size="sm" color="red" variant="filled" circle>
@@ -420,21 +556,39 @@ export default function Dashboard() {
             <Grid>
               {/* Próximos Eventos - Lista/Calendario */}
               <Grid.Col span={{ base: 12, lg: 6 }}>
-                <Card shadow="sm" padding="lg" radius="md" className="bg-white" h="100%">
+                <Card
+                  shadow="sm"
+                  padding="lg"
+                  radius="md"
+                  className="bg-white"
+                  h="100%"
+                >
                   <Stack gap="md">
                     <Group justify="space-between">
                       <Group gap="xs">
-                        <ThemeIcon size="md" radius="md" color="blue" variant="light">
+                        <ThemeIcon
+                          size="md"
+                          radius="md"
+                          color="blue"
+                          variant="light"
+                        >
                           <IconCalendarEvent size={18} />
                         </ThemeIcon>
-                        <Title order={3} className="text-gray-900">Montajes y Desmontajes</Title>
+                        <Title order={3} className="text-gray-900">
+                          Montajes y Desmontajes
+                        </Title>
                       </Group>
                       <Group gap="xs">
                         <SegmentedControl
                           value={eventsView}
-                          onChange={(value) => setEventsView(value as "list" | "calendar")}
+                          onChange={(value) =>
+                            setEventsView(value as "list" | "calendar")
+                          }
                           data={[
-                            { label: <IconCalendar size={16} />, value: "calendar" },
+                            {
+                              label: <IconCalendar size={16} />,
+                              value: "calendar",
+                            },
                             { label: <IconList size={16} />, value: "list" },
                           ]}
                           size="xs"
@@ -443,7 +597,7 @@ export default function Dashboard() {
                           variant="subtle"
                           size="xs"
                           rightSection={<IconArrowUpRight size={14} />}
-                          onClick={() => router.push('/eventos')}
+                          onClick={() => router.push("/eventos")}
                         >
                           Ver todos
                         </Button>
@@ -454,63 +608,99 @@ export default function Dashboard() {
                       <Stack gap="sm">
                         {/* Leyenda de colores */}
                         <Paper p="xs" withBorder bg="gray.0">
-                          <Text size="xs" fw={600} mb={6} c="dimmed">Leyenda:</Text>
+                          <Text size="xs" fw={600} mb={6} c="dimmed">
+                            Leyenda:
+                          </Text>
                           <Group gap="xs" wrap="wrap">
                             <Group gap={4}>
-                              <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#fd7e14' }} />
-                              <Text size="xs" c="dimmed">Montaje</Text>
+                              <div
+                                style={{
+                                  width: 10,
+                                  height: 10,
+                                  borderRadius: "50%",
+                                  backgroundColor: "#fd7e14",
+                                }}
+                              />
+                              <Text size="xs" c="dimmed">
+                                Montaje
+                              </Text>
                             </Group>
                             <Group gap={4}>
-                              <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#228be6' }} />
-                              <Text size="xs" c="dimmed">Evento</Text>
+                              <div
+                                style={{
+                                  width: 10,
+                                  height: 10,
+                                  borderRadius: "50%",
+                                  backgroundColor: "#228be6",
+                                }}
+                              />
+                              <Text size="xs" c="dimmed">
+                                Evento
+                              </Text>
                             </Group>
                             <Group gap={4}>
-                              <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#be4bdb' }} />
-                              <Text size="xs" c="dimmed">Desmontaje</Text>
+                              <div
+                                style={{
+                                  width: 10,
+                                  height: 10,
+                                  borderRadius: "50%",
+                                  backgroundColor: "#be4bdb",
+                                }}
+                              />
+                              <Text size="xs" c="dimmed">
+                                Desmontaje
+                              </Text>
                             </Group>
                           </Group>
                         </Paper>
-                        
-                        {/* Navegación del mes */}
-                        <Group justify="space-between" align="center">
-                          <ActionIcon variant="subtle" onClick={goToPreviousMonth}>
-                            <IconChevronLeft size={18} />
-                          </ActionIcon>
-                          <Text fw={600}>
-                            {currentMonth.toLocaleDateString("es-CL", { month: "long", year: "numeric" })}
-                          </Text>
-                          <ActionIcon variant="subtle" onClick={goToNextMonth}>
-                            <IconChevronRight size={18} />
-                          </ActionIcon>
-                        </Group>
-                        <Button size="xs" variant="light" onClick={goToToday} fullWidth>
-                          Hoy
-                        </Button>
 
                         {/* Calendario */}
                         <div style={{ width: "100%" }}>
                           <Calendar
+                            locale="es"
                             date={currentMonth}
-                            onDateChange={(date) => setCurrentMonth(new Date(date))}
+                            onDateChange={(date) =>
+                              setCurrentMonth(new Date(date))
+                            }
                             getDayProps={(dateString) => {
-                              const date = new Date(dateString);
-                              const hasEvents = hasEventsOnDay(date);
-                              const isSelected = selectedDate && isSameDay(date, selectedDate);
-                              const eventsCount = getDayEvents(date).length;
-                              
+                              // Usar getLocalDate para normalizar consistentemente
+                              const normalizedDate = getLocalDate(dateString);
+                              const hasEvents = hasEventsOnDay(normalizedDate);
+                              const isSelected =
+                                selectedDate &&
+                                isSameDay(normalizedDate, selectedDate);
+                              const eventsCount =
+                                getDayEvents(normalizedDate).length;
+
                               return {
-                                onClick: () => setSelectedDate(date),
+                                onClick: () => setSelectedDate(normalizedDate),
                                 style: {
-                                  backgroundColor: isSelected ? "#228be6" : hasEvents ? "#e7f5ff" : undefined,
-                                  color: isSelected ? "white" : hasEvents ? "#228be6" : undefined,
+                                  backgroundColor: isSelected
+                                    ? "#228be6"
+                                    : hasEvents
+                                      ? "#e7f5ff"
+                                      : undefined,
+                                  color: isSelected
+                                    ? "white"
+                                    : hasEvents
+                                      ? "#228be6"
+                                      : undefined,
                                   fontWeight: hasEvents ? 700 : 400,
                                   position: "relative" as const,
                                   borderRadius: "8px",
                                   transition: "all 0.2s ease",
                                 },
                                 children: (
-                                  <div style={{ position: "relative", width: "100%", height: "100%" }}>
-                                    <div style={{ paddingTop: "8px" }}>{date.getDate()}</div>
+                                  <div
+                                    style={{
+                                      position: "relative",
+                                      width: "100%",
+                                      height: "100%",
+                                    }}
+                                  >
+                                    <div style={{ paddingTop: "8px" }}>
+                                      {normalizedDate.getDate()}
+                                    </div>
                                     {hasEvents && (
                                       <div
                                         style={{
@@ -525,16 +715,25 @@ export default function Dashboard() {
                                         }}
                                       >
                                         {(() => {
-                                          const dayEvents = getDayEvents(date);
-                                          const allTypes = new Set(dayEvents.flatMap(e => e.types || []));
-                                          const typesArray = Array.from(allTypes);
-                                          
+                                          const dayEvents =
+                                            getDayEvents(normalizedDate);
+                                          const allTypes = new Set(
+                                            dayEvents.flatMap(
+                                              (e) => e.types || [],
+                                            ),
+                                          );
+                                          const typesArray =
+                                            Array.from(allTypes);
+
                                           return typesArray.map((type, i) => {
                                             let color = "#228be6"; // Azul por defecto
-                                            if (type === 'montaje') color = "#fd7e14"; // Naranja
-                                            if (type === 'evento') color = "#228be6"; // Azul
-                                            if (type === 'desmontaje') color = "#be4bdb"; // Morado
-                                            
+                                            if (type === "montaje")
+                                              color = "#fd7e14"; // Naranja
+                                            if (type === "evento")
+                                              color = "#228be6"; // Azul
+                                            if (type === "desmontaje")
+                                              color = "#be4bdb"; // Morado
+
                                             return (
                                               <div
                                                 key={i}
@@ -542,7 +741,9 @@ export default function Dashboard() {
                                                   width: "6px",
                                                   height: "6px",
                                                   borderRadius: "50%",
-                                                  backgroundColor: isSelected ? "white" : color,
+                                                  backgroundColor: isSelected
+                                                    ? "white"
+                                                    : color,
                                                 }}
                                               />
                                             );
@@ -557,7 +758,7 @@ export default function Dashboard() {
                             styles={{
                               calendarHeader: { maxWidth: "100%" },
                               month: { width: "100%" },
-                              monthCell: { 
+                              monthCell: {
                                 height: "60px",
                               },
                             }}
@@ -572,68 +773,125 @@ export default function Dashboard() {
                             </Text>
                             {getEventsForSelectedDate().length > 0 ? (
                               <Stack gap="xs">
-                                {getEventsForSelectedDate().map((event: any) => (
-                                  <Paper
-                                    key={event.id}
-                                    p="xs"
-                                    withBorder
-                                    radius="sm"
-                                    className="hover:shadow-sm transition-shadow cursor-pointer"
-                                    onClick={() => router.push('/eventos')}
-                                  >
-                                    <Group justify="space-between" mb={4}>
-                                      <Text size="xs" fw={600} lineClamp={1}>
-                                        {event.nombreCliente}
+                                {getEventsForSelectedDate().map(
+                                  (event: any) => (
+                                    <Paper
+                                      key={event.id}
+                                      p="xs"
+                                      withBorder
+                                      radius="sm"
+                                      className="cursor-pointer transition-shadow hover:shadow-sm"
+                                      onClick={() => router.push("/eventos")}
+                                    >
+                                      <Group justify="space-between" mb={4}>
+                                        <Text size="xs" fw={600} lineClamp={1}>
+                                          {event.nombreCliente}
+                                        </Text>
+                                        <Badge
+                                          size="xs"
+                                          color={getStatusColor(event.estado)}
+                                        >
+                                          {event.estado}
+                                        </Badge>
+                                      </Group>
+
+                                      {/* Badges para tipo de evento */}
+                                      <Group gap={4} mb={4}>
+                                        {event.types?.includes("montaje") && (
+                                          <Badge
+                                            size="xs"
+                                            color="orange"
+                                            variant="dot"
+                                          >
+                                            🏗️ Montaje
+                                          </Badge>
+                                        )}
+                                        {event.types?.includes("evento") && (
+                                          <Badge
+                                            size="xs"
+                                            color="blue"
+                                            variant="dot"
+                                          >
+                                            🎉 Evento
+                                          </Badge>
+                                        )}
+                                        {event.types?.includes(
+                                          "desmontaje",
+                                        ) && (
+                                          <Badge
+                                            size="xs"
+                                            color="grape"
+                                            variant="dot"
+                                          >
+                                            🔧 Desmontaje
+                                          </Badge>
+                                        )}
+                                      </Group>
+
+                                      {/* Horarios según el tipo */}
+                                      <Stack gap={2}>
+                                        {event.types?.includes("montaje") && (
+                                          <Text size="xs" c="orange">
+                                            Montaje:{" "}
+                                            {new Date(
+                                              event.horaInicio,
+                                            ).toLocaleTimeString("es-CL", {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}
+                                          </Text>
+                                        )}
+                                        {event.types?.includes("evento") && (
+                                          <Text size="xs" c="blue">
+                                            Evento:{" "}
+                                            {new Date(
+                                              event.startDate,
+                                            ).toLocaleTimeString("es-CL", {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}{" "}
+                                            -{" "}
+                                            {new Date(
+                                              event.endDate,
+                                            ).toLocaleTimeString("es-CL", {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}
+                                          </Text>
+                                        )}
+                                        {event.types?.includes(
+                                          "desmontaje",
+                                        ) && (
+                                          <Text size="xs" c="grape">
+                                            Desmontaje:{" "}
+                                            {new Date(
+                                              event.horaTermino,
+                                            ).toLocaleTimeString("es-CL", {
+                                              hour: "2-digit",
+                                              minute: "2-digit",
+                                            })}
+                                          </Text>
+                                        )}
+                                      </Stack>
+
+                                      <Text
+                                        size="xs"
+                                        c="dimmed"
+                                        lineClamp={1}
+                                        mt={4}
+                                      >
+                                        <IconMapPin
+                                          size={12}
+                                          style={{
+                                            display: "inline",
+                                            marginRight: 4,
+                                          }}
+                                        />
+                                        {event.direccion}
                                       </Text>
-                                      <Badge size="xs" color={getStatusColor(event.estado)}>
-                                        {event.estado}
-                                      </Badge>
-                                    </Group>
-                                    
-                                    {/* Badges para tipo de evento */}
-                                    <Group gap={4} mb={4}>
-                                      {event.types?.includes('montaje') && (
-                                        <Badge size="xs" color="orange" variant="dot">
-                                          🏗️ Montaje
-                                        </Badge>
-                                      )}
-                                      {event.types?.includes('evento') && (
-                                        <Badge size="xs" color="blue" variant="dot">
-                                          🎉 Evento
-                                        </Badge>
-                                      )}
-                                      {event.types?.includes('desmontaje') && (
-                                        <Badge size="xs" color="grape" variant="dot">
-                                          🔧 Desmontaje
-                                        </Badge>
-                                      )}
-                                    </Group>
-                                    
-                                    {/* Horarios según el tipo */}
-                                    <Stack gap={2}>
-                                      {event.types?.includes('montaje') && (
-                                        <Text size="xs" c="orange">
-                                          Montaje: {new Date(event.horaInicio).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
-                                        </Text>
-                                      )}
-                                      {event.types?.includes('evento') && (
-                                        <Text size="xs" c="blue">
-                                          Evento: {new Date(event.startDate).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })} - {new Date(event.endDate).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
-                                        </Text>
-                                      )}
-                                      {event.types?.includes('desmontaje') && (
-                                        <Text size="xs" c="grape">
-                                          Desmontaje: {new Date(event.horaTermino).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
-                                        </Text>
-                                      )}
-                                    </Stack>
-                                    
-                                    <Text size="xs" c="dimmed" lineClamp={1} mt={4}>
-                                      <IconMapPin size={12} style={{ display: "inline", marginRight: 4 }} />
-                                      {event.direccion}
-                                    </Text>
-                                  </Paper>
-                                ))}
+                                    </Paper>
+                                  ),
+                                )}
                               </Stack>
                             ) : (
                               <Text size="xs" c="dimmed" ta="center" py="sm">
@@ -653,8 +911,8 @@ export default function Dashboard() {
                                 p="md"
                                 withBorder
                                 radius="md"
-                                className="hover:shadow-md transition-shadow cursor-pointer"
-                                onClick={() => router.push('/eventos')}
+                                className="cursor-pointer transition-shadow hover:shadow-md"
+                                onClick={() => router.push("/eventos")}
                               >
                                 <Group justify="space-between" mb="xs">
                                   <Group gap="xs">
@@ -666,45 +924,85 @@ export default function Dashboard() {
                                     >
                                       {getStatusIcon(event.estado)}
                                     </ThemeIcon>
-                                    <Text fw={600} size="sm">{event.nombreCliente}</Text>
+                                    <Text fw={600} size="sm">
+                                      {event.nombreCliente}
+                                    </Text>
                                   </Group>
-                                  <Badge size="sm" color={getStatusColor(event.estado)}>
+                                  <Badge
+                                    size="sm"
+                                    color={getStatusColor(event.estado)}
+                                  >
                                     {event.estado}
                                   </Badge>
                                 </Group>
-                                
-                                <Divider my="xs" label="🎉 Evento" labelPosition="left" size="xs" />
+
+                                <Divider
+                                  my="xs"
+                                  label="🎉 Evento"
+                                  labelPosition="left"
+                                  size="xs"
+                                />
                                 <Group gap="xs" mb="xs">
-                                  <IconCalendarEvent size={14} className="text-blue-500" />
+                                  <IconCalendarEvent
+                                    size={14}
+                                    className="text-blue-500"
+                                  />
                                   <Text size="xs" c="blue">
-                                    {formatDate(event.startDate)} - {formatDate(event.endDate)}
+                                    {formatDate(event.startDate)} -{" "}
+                                    {formatDate(event.endDate)}
                                   </Text>
                                 </Group>
-                                
-                                <Divider my="xs" label="🏗️ Logística" labelPosition="left" size="xs" />
+
+                                <Divider
+                                  my="xs"
+                                  label="🏗️ Logística"
+                                  labelPosition="left"
+                                  size="xs"
+                                />
                                 <Stack gap={4} mb="xs">
                                   <Group gap="xs">
-                                    <Text size="xs" c="orange" fw={500}>Montaje:</Text>
+                                    <Text size="xs" c="orange" fw={500}>
+                                      Montaje:
+                                    </Text>
                                     <Text size="xs" c="dimmed">
-                                      {formatDate(event.horaInicio)} {new Date(event.horaInicio).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                                      {formatDate(event.horaInicio)}{" "}
+                                      {new Date(
+                                        event.horaInicio,
+                                      ).toLocaleTimeString("es-CL", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
                                     </Text>
                                   </Group>
                                   <Group gap="xs">
-                                    <Text size="xs" c="grape" fw={500}>Desmontaje:</Text>
+                                    <Text size="xs" c="grape" fw={500}>
+                                      Desmontaje:
+                                    </Text>
                                     <Text size="xs" c="dimmed">
-                                      {formatDate(event.horaTermino)} {new Date(event.horaTermino).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
+                                      {formatDate(event.horaTermino)}{" "}
+                                      {new Date(
+                                        event.horaTermino,
+                                      ).toLocaleTimeString("es-CL", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                      })}
                                     </Text>
                                   </Group>
                                 </Stack>
-                                
+
                                 <Group gap="xs" mb="xs">
-                                  <IconMapPin size={14} className="text-gray-400" />
+                                  <IconMapPin
+                                    size={14}
+                                    className="text-gray-400"
+                                  />
                                   <Text size="xs" c="dimmed" lineClamp={1}>
                                     {event.direccion}
                                   </Text>
                                 </Group>
                                 <Group justify="space-between">
-                                  <Text size="xs" c="dimmed">Monto:</Text>
+                                  <Text size="xs" c="dimmed">
+                                    Monto:
+                                  </Text>
                                   <Text size="sm" fw={600} c="green">
                                     {formatCurrency(Number(event.montoTotal))}
                                   </Text>
@@ -715,7 +1013,11 @@ export default function Dashboard() {
                         ) : (
                           <Center h={300}>
                             <Stack align="center" gap="sm">
-                              <IconCalendarEvent size={48} className="text-gray-300" stroke={1.5} />
+                              <IconCalendarEvent
+                                size={48}
+                                className="text-gray-300"
+                                stroke={1.5}
+                              />
                               <Text c="dimmed">No hay eventos próximos</Text>
                             </Stack>
                           </Center>
@@ -728,21 +1030,39 @@ export default function Dashboard() {
 
               {/* Próximas Visitas Técnicas - Lista/Calendario */}
               <Grid.Col span={{ base: 12, lg: 6 }}>
-                <Card shadow="sm" padding="lg" radius="md" className="bg-white" h="100%">
+                <Card
+                  shadow="sm"
+                  padding="lg"
+                  radius="md"
+                  className="bg-white"
+                  h="100%"
+                >
                   <Stack gap="md">
                     <Group justify="space-between">
                       <Group gap="xs">
-                        <ThemeIcon size="md" radius="md" color="orange" variant="light">
+                        <ThemeIcon
+                          size="md"
+                          radius="md"
+                          color="orange"
+                          variant="light"
+                        >
                           <IconTool size={18} />
                         </ThemeIcon>
-                        <Title order={3} className="text-gray-900">Próximas Visitas</Title>
+                        <Title order={3} className="text-gray-900">
+                          Próximas Visitas
+                        </Title>
                       </Group>
                       <Group gap="xs">
                         <SegmentedControl
                           value={visitsView}
-                          onChange={(value) => setVisitsView(value as "list" | "calendar")}
+                          onChange={(value) =>
+                            setVisitsView(value as "list" | "calendar")
+                          }
                           data={[
-                            { label: <IconCalendar size={16} />, value: "calendar" },
+                            {
+                              label: <IconCalendar size={16} />,
+                              value: "calendar",
+                            },
                             { label: <IconList size={16} />, value: "list" },
                           ]}
                           size="xs"
@@ -751,7 +1071,7 @@ export default function Dashboard() {
                           variant="subtle"
                           size="xs"
                           rightSection={<IconArrowUpRight size={14} />}
-                          onClick={() => router.push('/technical-visits')}
+                          onClick={() => router.push("/technical-visits")}
                         >
                           Ver todas
                         </Button>
@@ -760,46 +1080,54 @@ export default function Dashboard() {
 
                     {visitsView === "calendar" ? (
                       <Stack gap="sm">
-                        {/* Navegación del mes */}
-                        <Group justify="space-between" align="center">
-                          <ActionIcon variant="subtle" onClick={goToPreviousVisitsMonth}>
-                            <IconChevronLeft size={18} />
-                          </ActionIcon>
-                          <Text fw={600}>
-                            {currentVisitsMonth.toLocaleDateString("es-CL", { month: "long", year: "numeric" })}
-                          </Text>
-                          <ActionIcon variant="subtle" onClick={goToNextVisitsMonth}>
-                            <IconChevronRight size={18} />
-                          </ActionIcon>
-                        </Group>
-                        <Button size="xs" variant="light" onClick={goToTodayVisits} fullWidth>
-                          Hoy
-                        </Button>
-
                         {/* Calendario */}
                         <div style={{ width: "100%" }}>
                           <Calendar
+                            locale="es"
                             date={currentVisitsMonth}
-                            onDateChange={(date) => setCurrentVisitsMonth(new Date(date))}
+                            onDateChange={(date) =>
+                              setCurrentVisitsMonth(new Date(date))
+                            }
                             getDayProps={(dateString) => {
-                              const date = new Date(dateString);
-                              const hasVisits = hasVisitsOnDay(date);
-                              const isSelected = selectedVisitDate && isSameDay(date, selectedVisitDate);
-                              const visitsCount = getDayVisits(date).length;
-                              
+                              // Usar getLocalDate para normalizar consistentemente
+                              const normalizedDate = getLocalDate(dateString);
+                              const hasVisits = hasVisitsOnDay(normalizedDate);
+                              const isSelected =
+                                selectedVisitDate &&
+                                isSameDay(normalizedDate, selectedVisitDate);
+                              const visitsCount =
+                                getDayVisits(normalizedDate).length;
+
                               return {
-                                onClick: () => setSelectedVisitDate(date),
+                                onClick: () =>
+                                  setSelectedVisitDate(normalizedDate),
                                 style: {
-                                  backgroundColor: isSelected ? "#fd7e14" : hasVisits ? "#fff4e6" : undefined,
-                                  color: isSelected ? "white" : hasVisits ? "#fd7e14" : undefined,
+                                  backgroundColor: isSelected
+                                    ? "#fd7e14"
+                                    : hasVisits
+                                      ? "#fff4e6"
+                                      : undefined,
+                                  color: isSelected
+                                    ? "white"
+                                    : hasVisits
+                                      ? "#fd7e14"
+                                      : undefined,
                                   fontWeight: hasVisits ? 700 : 400,
                                   position: "relative" as const,
                                   borderRadius: "8px",
                                   transition: "all 0.2s ease",
                                 },
                                 children: (
-                                  <div style={{ position: "relative", width: "100%", height: "100%" }}>
-                                    <div style={{ paddingTop: "8px" }}>{date.getDate()}</div>
+                                  <div
+                                    style={{
+                                      position: "relative",
+                                      width: "100%",
+                                      height: "100%",
+                                    }}
+                                  >
+                                    <div style={{ paddingTop: "8px" }}>
+                                      {normalizedDate.getDate()}
+                                    </div>
                                     {hasVisits && (
                                       <div
                                         style={{
@@ -813,14 +1141,18 @@ export default function Dashboard() {
                                           justifyContent: "center",
                                         }}
                                       >
-                                        {Array.from({ length: Math.min(visitsCount, 3) }).map((_, i) => (
+                                        {Array.from({
+                                          length: Math.min(visitsCount, 3),
+                                        }).map((_, i) => (
                                           <div
                                             key={i}
                                             style={{
                                               width: "5px",
                                               height: "5px",
                                               borderRadius: "50%",
-                                              backgroundColor: isSelected ? "white" : "#fd7e14",
+                                              backgroundColor: isSelected
+                                                ? "white"
+                                                : "#fd7e14",
                                             }}
                                           />
                                         ))}
@@ -833,7 +1165,7 @@ export default function Dashboard() {
                             styles={{
                               calendarHeader: { maxWidth: "100%" },
                               month: { width: "100%" },
-                              monthCell: { 
+                              monthCell: {
                                 height: "60px",
                               },
                             }}
@@ -848,41 +1180,71 @@ export default function Dashboard() {
                             </Text>
                             {getVisitsForSelectedDate().length > 0 ? (
                               <Stack gap="xs">
-                                {getVisitsForSelectedDate().map((visit: any) => (
-                                  <Paper
-                                    key={visit.id}
-                                    p="xs"
-                                    withBorder
-                                    radius="sm"
-                                    className="hover:shadow-sm transition-shadow cursor-pointer"
-                                    onClick={() => router.push('/technical-visits')}
-                                  >
-                                    <Group justify="space-between" mb={4}>
-                                      <Text size="xs" fw={600} lineClamp={1}>
-                                        {visit.nombreCliente}
+                                {getVisitsForSelectedDate().map(
+                                  (visit: any) => (
+                                    <Paper
+                                      key={visit.id}
+                                      p="xs"
+                                      withBorder
+                                      radius="sm"
+                                      className="cursor-pointer transition-shadow hover:shadow-sm"
+                                      onClick={() =>
+                                        router.push("/technical-visits")
+                                      }
+                                    >
+                                      <Group justify="space-between" mb={4}>
+                                        <Text size="xs" fw={600} lineClamp={1}>
+                                          {visit.nombreCliente}
+                                        </Text>
+                                        <Badge
+                                          size="xs"
+                                          color={getStatusColor(visit.estado)}
+                                        >
+                                          {visit.estado}
+                                        </Badge>
+                                      </Group>
+
+                                      <Text
+                                        size="xs"
+                                        c="orange"
+                                        fw={500}
+                                        mb={2}
+                                      >
+                                        🔧{" "}
+                                        {new Date(
+                                          visit.horaVisita,
+                                        ).toLocaleTimeString("es-CL", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        })}
                                       </Text>
-                                      <Badge size="xs" color={getStatusColor(visit.estado)}>
-                                        {visit.estado}
-                                      </Badge>
-                                    </Group>
-                                    
-                                    <Text size="xs" c="orange" fw={500} mb={2}>
-                                      🔧 {new Date(visit.horaVisita).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" })}
-                                    </Text>
-                                    
-                                    <Text size="xs" c="dimmed" lineClamp={1}>
-                                      <IconMapPin size={12} style={{ display: "inline", marginRight: 4 }} />
-                                      {visit.direccion}
-                                    </Text>
-                                    
-                                    {visit.assignedUser && (
-                                      <Text size="xs" c="dimmed" mt={2}>
-                                        <IconUser size={12} style={{ display: "inline", marginRight: 4 }} />
-                                        {visit.assignedUser.name}
+
+                                      <Text size="xs" c="dimmed" lineClamp={1}>
+                                        <IconMapPin
+                                          size={12}
+                                          style={{
+                                            display: "inline",
+                                            marginRight: 4,
+                                          }}
+                                        />
+                                        {visit.direccion}
                                       </Text>
-                                    )}
-                                  </Paper>
-                                ))}
+
+                                      {visit.assignedUser && (
+                                        <Text size="xs" c="dimmed" mt={2}>
+                                          <IconUser
+                                            size={12}
+                                            style={{
+                                              display: "inline",
+                                              marginRight: 4,
+                                            }}
+                                          />
+                                          {visit.assignedUser.name}
+                                        </Text>
+                                      )}
+                                    </Paper>
+                                  ),
+                                )}
                               </Stack>
                             ) : (
                               <Text size="xs" c="dimmed" ta="center" py="sm">
@@ -902,8 +1264,8 @@ export default function Dashboard() {
                                 p="md"
                                 withBorder
                                 radius="md"
-                                className="hover:shadow-md transition-shadow cursor-pointer"
-                                onClick={() => router.push('/technical-visits')}
+                                className="cursor-pointer transition-shadow hover:shadow-md"
+                                onClick={() => router.push("/technical-visits")}
                               >
                                 <Group justify="space-between" mb="xs">
                                   <Group gap="xs">
@@ -915,31 +1277,51 @@ export default function Dashboard() {
                                     >
                                       {getStatusIcon(visit.estado)}
                                     </ThemeIcon>
-                                    <Text fw={600} size="sm">{visit.nombreCliente}</Text>
+                                    <Text fw={600} size="sm">
+                                      {visit.nombreCliente}
+                                    </Text>
                                   </Group>
-                                  <Badge size="sm" color={getStatusColor(visit.estado)}>
+                                  <Badge
+                                    size="sm"
+                                    color={getStatusColor(visit.estado)}
+                                  >
                                     {visit.estado}
                                   </Badge>
                                 </Group>
-                                
-                                <Divider my="xs" label="🔧 Visita Técnica" labelPosition="left" size="xs" />
+
+                                <Divider
+                                  my="xs"
+                                  label="🔧 Visita Técnica"
+                                  labelPosition="left"
+                                  size="xs"
+                                />
                                 <Group gap="xs" mb="xs">
-                                  <IconCalendarEvent size={14} className="text-orange-500" />
+                                  <IconCalendarEvent
+                                    size={14}
+                                    className="text-orange-500"
+                                  />
                                   <Text size="xs" c="orange" fw={500}>
-                                    {formatDate(visit.fechaVisita)} - {formatTime(visit.horaVisita)}
+                                    {formatDate(visit.fechaVisita)} -{" "}
+                                    {formatTime(visit.horaVisita)}
                                   </Text>
                                 </Group>
-                                
+
                                 <Group gap="xs" mb="xs">
-                                  <IconMapPin size={14} className="text-gray-400" />
+                                  <IconMapPin
+                                    size={14}
+                                    className="text-gray-400"
+                                  />
                                   <Text size="xs" c="dimmed" lineClamp={1}>
                                     {visit.direccion}
                                   </Text>
                                 </Group>
-                                
+
                                 {visit.assignedUser && (
                                   <Group gap="xs">
-                                    <IconUser size={14} className="text-gray-400" />
+                                    <IconUser
+                                      size={14}
+                                      className="text-gray-400"
+                                    />
                                     <Text size="xs" c="dimmed">
                                       Asignado a: {visit.assignedUser.name}
                                     </Text>
@@ -951,7 +1333,11 @@ export default function Dashboard() {
                         ) : (
                           <Center h={300}>
                             <Stack align="center" gap="sm">
-                              <IconTool size={48} className="text-gray-300" stroke={1.5} />
+                              <IconTool
+                                size={48}
+                                className="text-gray-300"
+                                stroke={1.5}
+                              />
                               <Text c="dimmed">No hay visitas próximas</Text>
                             </Stack>
                           </Center>
@@ -967,8 +1353,14 @@ export default function Dashboard() {
             <Grid>
               {/* Event Status Distribution */}
               <Grid.Col span={{ base: 12, md: 6, lg: 4 }}>
-                <Card shadow="sm" padding="lg" radius="md" className="bg-white" h="100%">
-                  <Title order={4} className="text-gray-900 mb-md">
+                <Card
+                  shadow="sm"
+                  padding="lg"
+                  radius="md"
+                  className="bg-white"
+                  h="100%"
+                >
+                  <Title order={4} className="mb-md text-gray-900">
                     Estado de Eventos
                   </Title>
                   <Center>
@@ -977,7 +1369,10 @@ export default function Dashboard() {
                       thickness={16}
                       sections={
                         eventsByStatus?.map((item) => ({
-                          value: totalEvents > 0 ? (item.count / totalEvents) * 100 : 0,
+                          value:
+                            totalEvents > 0
+                              ? (item.count / totalEvents) * 100
+                              : 0,
                           color: getStatusColor(item.status),
                           tooltip: `${item.status}: ${item.count}`,
                         })) || []
@@ -1018,19 +1413,32 @@ export default function Dashboard() {
                   </Stack>
                   <Divider my="md" />
                   <Group justify="space-between">
-                    <Text size="sm" fw={500}>Tasa de Completitud</Text>
+                    <Text size="sm" fw={500}>
+                      Tasa de Completitud
+                    </Text>
                     <Text size="sm" fw={700} c="green">
                       {completionRate.toFixed(1)}%
                     </Text>
                   </Group>
-                  <Progress value={completionRate} color="green" size="sm" mt="xs" />
+                  <Progress
+                    value={completionRate}
+                    color="green"
+                    size="sm"
+                    mt="xs"
+                  />
                 </Card>
               </Grid.Col>
 
               {/* Recent Activity Timeline */}
               <Grid.Col span={{ base: 12, md: 6, lg: 8 }}>
-                <Card shadow="sm" padding="lg" radius="md" className="bg-white" h="100%">
-                  <Title order={4} className="text-gray-900 mb-md">
+                <Card
+                  shadow="sm"
+                  padding="lg"
+                  radius="md"
+                  className="bg-white"
+                  h="100%"
+                >
+                  <Title order={4} className="mb-md text-gray-900">
                     Actividad Reciente
                   </Title>
                   <ScrollArea h={350}>
@@ -1041,14 +1449,21 @@ export default function Dashboard() {
                           bullet={<IconCalendarEvent size={12} />}
                           title={
                             <Group gap="xs">
-                              <Text size="sm" fw={500}>Evento creado</Text>
-                              <Badge size="xs" color={getStatusColor(event.estado)}>
+                              <Text size="sm" fw={500}>
+                                Evento creado
+                              </Text>
+                              <Badge
+                                size="xs"
+                                color={getStatusColor(event.estado)}
+                              >
                                 {event.estado}
                               </Badge>
                             </Group>
                           }
                         >
-                          <Text size="sm" c="dimmed">{event.nombreCliente}</Text>
+                          <Text size="sm" c="dimmed">
+                            {event.nombreCliente}
+                          </Text>
                           <Text size="xs" c="dimmed" mt={4}>
                             {formatDate(event.createdAt)}
                           </Text>
@@ -1060,14 +1475,21 @@ export default function Dashboard() {
                           bullet={<IconTool size={12} />}
                           title={
                             <Group gap="xs">
-                              <Text size="sm" fw={500}>Visita programada</Text>
-                              <Badge size="xs" color={getStatusColor(visit.estado)}>
+                              <Text size="sm" fw={500}>
+                                Visita programada
+                              </Text>
+                              <Badge
+                                size="xs"
+                                color={getStatusColor(visit.estado)}
+                              >
                                 {visit.estado}
                               </Badge>
                             </Group>
                           }
                         >
-                          <Text size="sm" c="dimmed">{visit.nombreCliente}</Text>
+                          <Text size="sm" c="dimmed">
+                            {visit.nombreCliente}
+                          </Text>
                           <Text size="xs" c="dimmed" mt={4}>
                             {formatDate(visit.createdAt)}
                           </Text>
