@@ -88,7 +88,8 @@ export const authOptions: NextAuthOptions = {
             access_type: "offline",
             response_type: "code"
           }
-        }
+        },
+        allowDangerousEmailAccountLinking: true,
       })
     ] : []),
   ],
