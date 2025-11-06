@@ -25,6 +25,7 @@ import {
   Divider,
   ScrollArea,
   SegmentedControl,
+  Anchor,
 } from "@mantine/core";
 import { Calendar } from "@mantine/dates";
 import {
@@ -87,6 +88,21 @@ export default function Dashboard() {
       </MainLayout>
     );
   }
+
+  // Función para generar link de Google Maps
+  const getGoogleMapsLink = (direccion: string) => {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(direccion)}`;
+  };
+
+  // Función para verificar si una fecha es hoy
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
 
   const getStatusColor = (estado: string) => {
     switch (estado) {
@@ -633,6 +649,7 @@ export default function Dashboard() {
                               const isSelected =
                                 selectedDate &&
                                 isSameDay(normalizedDate, selectedDate);
+                              const isTodayDate = isToday(normalizedDate);
 
                               return {
                                 onClick: () => setSelectedDate(normalizedDate),
@@ -651,6 +668,8 @@ export default function Dashboard() {
                                   position: "relative" as const,
                                   borderRadius: "8px",
                                   transition: "all 0.2s ease",
+                                  border: isTodayDate ? "2px solid #fa5252" : undefined,
+                                  boxShadow: isTodayDate ? "0 0 0 1px #fa5252" : undefined,
                                 },
                                 children: (
                                   <div
@@ -836,21 +855,28 @@ export default function Dashboard() {
                                         )}
                                       </Stack>
 
-                                      <Text
-                                        size="xs"
-                                        c="dimmed"
-                                        lineClamp={1}
-                                        mt={4}
-                                      >
+                                      <Group gap={4} mt={4} wrap="nowrap">
                                         <IconMapPin
                                           size={12}
-                                          style={{
-                                            display: "inline",
-                                            marginRight: 4,
-                                          }}
+                                          style={{ flexShrink: 0 }}
+                                          className="text-gray-400"
                                         />
-                                        {event.direccion}
-                                      </Text>
+                                        <Anchor
+                                          href={getGoogleMapsLink(event.direccion)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          size="xs"
+                                          c="dimmed"
+                                          className="hover:underline"
+                                          style={{
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                          }}
+                                        >
+                                          {event.direccion}
+                                        </Anchor>
+                                      </Group>
                                     </Paper>
                                   ),
                                 )}
@@ -952,14 +978,27 @@ export default function Dashboard() {
                                   </Group>
                                 </Stack>
 
-                                <Group gap="xs" mb="xs">
+                                <Group gap="xs" mb="xs" wrap="nowrap">
                                   <IconMapPin
                                     size={14}
                                     className="text-gray-400"
+                                    style={{ flexShrink: 0 }}
                                   />
-                                  <Text size="xs" c="dimmed" lineClamp={1}>
+                                  <Anchor
+                                    href={getGoogleMapsLink(event.direccion)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    size="xs"
+                                    c="dimmed"
+                                    className="hover:underline"
+                                    style={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
                                     {event.direccion}
-                                  </Text>
+                                  </Anchor>
                                 </Group>
                                 <Group justify="space-between">
                                   <Text size="xs" c="dimmed">
@@ -1059,6 +1098,7 @@ export default function Dashboard() {
                                 isSameDay(normalizedDate, selectedVisitDate);
                               const visitsCount =
                                 getDayVisits(normalizedDate).length;
+                              const isTodayDate = isToday(normalizedDate);
 
                               return {
                                 onClick: () =>
@@ -1078,6 +1118,8 @@ export default function Dashboard() {
                                   position: "relative" as const,
                                   borderRadius: "8px",
                                   transition: "all 0.2s ease",
+                                  border: isTodayDate ? "2px solid #fa5252" : undefined,
+                                  boxShadow: isTodayDate ? "0 0 0 1px #fa5252" : undefined,
                                 },
                                 children: (
                                   <div
@@ -1181,16 +1223,28 @@ export default function Dashboard() {
                                         })}
                                       </Text>
 
-                                      <Text size="xs" c="dimmed" lineClamp={1}>
+                                      <Group gap={4} wrap="nowrap">
                                         <IconMapPin
                                           size={12}
-                                          style={{
-                                            display: "inline",
-                                            marginRight: 4,
-                                          }}
+                                          style={{ flexShrink: 0 }}
+                                          className="text-gray-400"
                                         />
-                                        {visit.direccion}
-                                      </Text>
+                                        <Anchor
+                                          href={getGoogleMapsLink(visit.direccion)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          size="xs"
+                                          c="dimmed"
+                                          className="hover:underline"
+                                          style={{
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            whiteSpace: "nowrap",
+                                          }}
+                                        >
+                                          {visit.direccion}
+                                        </Anchor>
+                                      </Group>
 
                                       {visit.assignedUser && (
                                         <Text size="xs" c="dimmed" mt={2}>
@@ -1268,14 +1322,27 @@ export default function Dashboard() {
                                   </Text>
                                 </Group>
 
-                                <Group gap="xs" mb="xs">
+                                <Group gap="xs" mb="xs" wrap="nowrap">
                                   <IconMapPin
                                     size={14}
                                     className="text-gray-400"
+                                    style={{ flexShrink: 0 }}
                                   />
-                                  <Text size="xs" c="dimmed" lineClamp={1}>
+                                  <Anchor
+                                    href={getGoogleMapsLink(visit.direccion)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    size="xs"
+                                    c="dimmed"
+                                    className="hover:underline"
+                                    style={{
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                    }}
+                                  >
                                     {visit.direccion}
-                                  </Text>
+                                  </Anchor>
                                 </Group>
 
                                 {visit.assignedUser && (
