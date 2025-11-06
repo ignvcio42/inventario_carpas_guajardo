@@ -12,9 +12,26 @@ import {
   CalendarIcon,
   MapPinIcon,
   CreditCardIcon,
-  BuildingOfficeIcon,
   UserIcon,
+  Bars3Icon,
 } from "@heroicons/react/24/outline";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface DetalleItem {
   detalle: string;
@@ -40,14 +57,176 @@ interface CotizacionFormProps {
 const DESCRIPCIONES_PREDEFINIDAS = [
   "Estructura Metálica (3 mts altura parejo)",
   "Estructura Metálica (4 mts altura parejo)",
+  "Estructura Metálica (5 mts altura parejo)",
   "Techo Blanco",
   "Techo negro",
+  "Techo blanco o negro",
   "Cubre pilares color blanco",
   "Iluminación LED decorativa",
   "Montaje y Desmontaje",
   "Iluminación básica",
   "Cubrepiso",
 ];
+
+interface SortableDetalleRowProps {
+  detalle: DetalleItem;
+  index: number;
+  onUpdate: (index: number, field: keyof DetalleItem, value: string | number) => void;
+  onDelete: (index: number) => void;
+  formatearDinero: (valor: number) => string;
+}
+
+function SortableDetalleRow({ detalle, index, onUpdate, onDelete, formatearDinero }: SortableDetalleRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `detalle-${index}` });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const handleFieldChange = (field: keyof DetalleItem, value: string) => {
+    if (field === "detalle") {
+      onUpdate(index, field, value);
+    } else {
+      const numValue = parseFloat(value) || 0;
+      onUpdate(index, field, numValue);
+    }
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style} className="border-b border-gray-100 text-sm hover:bg-gray-50">
+      <td className="p-2 sm:p-3">
+        <div className="flex items-center gap-1 sm:gap-2 min-w-[180px] sm:min-w-[200px]">
+          <button
+            type="button"
+            className="cursor-grab touch-none text-gray-400 hover:text-gray-600 active:cursor-grabbing flex-shrink-0"
+            {...attributes}
+            {...listeners}
+          >
+            <Bars3Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+          </button>
+          <input
+            type="text"
+            value={detalle.detalle}
+            onChange={(e) => handleFieldChange("detalle", e.target.value)}
+            className="w-full min-w-0 rounded border border-gray-200 px-2 py-1 text-xs sm:text-sm focus:border-blue-500 focus:outline-none"
+          />
+        </div>
+      </td>
+      <td className="p-2 sm:p-3">
+        <input
+          type="number"
+          value={detalle.largo}
+          onChange={(e) => handleFieldChange("largo", e.target.value)}
+          step="0.01"
+          className="w-full min-w-[60px] rounded border border-gray-200 px-2 py-1 text-xs sm:text-sm focus:border-blue-500 focus:outline-none"
+        />
+      </td>
+      <td className="p-2 sm:p-3">
+        <input
+          type="number"
+          value={detalle.alto}
+          onChange={(e) => handleFieldChange("alto", e.target.value)}
+          step="0.01"
+          className="w-full min-w-[60px] rounded border border-gray-200 px-2 py-1 text-xs sm:text-sm focus:border-blue-500 focus:outline-none"
+        />
+      </td>
+      <td className="p-2 sm:p-3">
+        <div className="rounded bg-gray-50 px-2 py-1 text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap min-w-[60px]">
+          {detalle.totalMts.toFixed(2)}
+        </div>
+      </td>
+      <td className="p-2 sm:p-3">
+        <input
+          type="number"
+          value={detalle.valorM2}
+          onChange={(e) => handleFieldChange("valorM2", e.target.value)}
+          step="1"
+          className="w-full min-w-[80px] rounded border border-gray-200 px-2 py-1 text-xs sm:text-sm focus:border-blue-500 focus:outline-none"
+        />
+      </td>
+      <td className="p-2 sm:p-3">
+        <div className="rounded bg-blue-50 px-2 py-1 text-xs sm:text-sm font-semibold text-blue-700 whitespace-nowrap min-w-[80px]">
+          {formatearDinero(detalle.total)}
+        </div>
+      </td>
+      <td className="p-2 sm:p-3">
+        <button
+          type="button"
+          onClick={() => onDelete(index)}
+          className="rounded-lg p-1 text-red-500 hover:bg-red-50 flex-shrink-0"
+        >
+          <TrashIcon className="h-4 w-4" />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+interface SortableDescripcionRowProps {
+  descripcion: DescripcionItem;
+  index: number;
+  onUpdate: (index: number, value: string) => void;
+  onDelete: (index: number) => void;
+}
+
+function SortableDescripcionRow({ descripcion, index, onUpdate, onDelete }: SortableDescripcionRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `descripcion-${index}` });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center justify-between rounded-lg bg-gray-50 p-2 sm:p-3 hover:bg-gray-100"
+    >
+      <div className="flex flex-1 items-center gap-1 sm:gap-2 min-w-0">
+        <button
+          type="button"
+          className="cursor-grab touch-none text-gray-400 hover:text-gray-600 active:cursor-grabbing flex-shrink-0"
+          {...attributes}
+          {...listeners}
+        >
+          <Bars3Icon className="h-4 w-4 sm:h-5 sm:w-5" />
+        </button>
+        <span className="text-sm text-gray-500 flex-shrink-0">•</span>
+        <input
+          type="text"
+          value={descripcion.descripcion}
+          onChange={(e) => onUpdate(index, e.target.value)}
+          className="flex-1 min-w-0 rounded border border-gray-200 px-2 py-1.5 text-xs sm:text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 sm:px-3"
+        />
+      </div>
+      <button
+        type="button"
+        onClick={() => onDelete(index)}
+        className="ml-1 sm:ml-2 rounded-lg p-1 text-red-500 hover:bg-red-100 flex-shrink-0"
+      >
+        <TrashIcon className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
 
 export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionFormProps) {
   const utils = api.useUtils();
@@ -116,17 +295,89 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
     },
   });
 
+  // Sensores para drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // Manejar fin de drag de detalles
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setDetalles((items) => {
+        const oldIndex = items.findIndex((_, i) => `detalle-${i}` === active.id);
+        const newIndex = items.findIndex((_, i) => `detalle-${i}` === over.id);
+        
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        return newItems.map((item, index) => ({ ...item, orden: index }));
+      });
+    }
+  };
+
+  // Manejar fin de drag de descripciones
+  const handleDragEndDescripciones = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setDescripciones((items) => {
+        const oldIndex = items.findIndex((_, i) => `descripcion-${i}` === active.id);
+        const newIndex = items.findIndex((_, i) => `descripcion-${i}` === over.id);
+        
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        return newItems.map((item, index) => ({ ...item, orden: index }));
+      });
+    }
+  };
+
+  // Actualizar detalle inline
+  const handleUpdateDetalle = (index: number, field: keyof DetalleItem, value: string | number) => {
+    setDetalles((prevDetalles) => {
+      const newDetalles = [...prevDetalles];
+      const detalle = newDetalles[index];
+      if (!detalle) return prevDetalles;
+
+      const updatedDetalle = { ...detalle, [field]: value };
+
+      // Recalcular totales si cambian los valores numéricos
+      if (field === "largo" || field === "alto" || field === "valorM2") {
+        const totalMts = updatedDetalle.largo * updatedDetalle.alto;
+        const total = totalMts * updatedDetalle.valorM2;
+        updatedDetalle.totalMts = totalMts;
+        updatedDetalle.total = total;
+      }
+
+      newDetalles[index] = updatedDetalle;
+      return newDetalles;
+    });
+  };
+
+  // Actualizar descripción inline
+  const handleUpdateDescripcion = (index: number, value: string) => {
+    setDescripciones((prevDescripciones) => {
+      const newDescripciones = [...prevDescripciones];
+      const descripcion = newDescripciones[index];
+      if (!descripcion) return prevDescripciones;
+
+      newDescripciones[index] = { ...descripcion, descripcion: value };
+      return newDescripciones;
+    });
+  };
+
   // Cargar folio automático
   useEffect(() => {
     if (nextFolio && !cotizacionId) {
-      setFolio(nextFolio);
+      setFolio(formatearFolio(nextFolio));
     }
   }, [nextFolio, cotizacionId]);
 
   // Cargar datos de cotización existente
   useEffect(() => {
     if (cotizacion) {
-      setFolio(cotizacion.folio);
+      setFolio(formatearFolio(cotizacion.folio));
       setAtencion(cotizacion.atencion);
       setEmpresa(cotizacion.empresa ?? "");
       setFechaEvento(cotizacion.fechaEvento ? (new Date(cotizacion.fechaEvento).toISOString().split("T")[0] ?? "") : "");
@@ -244,6 +495,25 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
     }).format(valor);
   };
 
+  const formatearFolio = (valor: string) => {
+    // Eliminar todo lo que no sea número
+    const numeros = valor.replace(/\D/g, "");
+    
+    // Si está vacío, retornar vacío
+    if (!numeros) return "";
+    
+    // Formatear con separador de miles
+    return new Intl.NumberFormat("es-CL").format(Number(numeros));
+  };
+
+  const handleFolioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    const numeros = inputValue.replace(/\D/g, "");
+    
+    // Guardar el valor formateado
+    setFolio(numeros ? formatearFolio(numeros) : "");
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -257,8 +527,11 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
       return;
     }
 
+    // Extraer solo los números del folio para enviar al backend
+    const folioSinFormato = folio.replace(/\D/g, "");
+
     const data = {
-      folio,
+      folio: folioSinFormato,
       atencion,
       empresa: empresa || undefined,
       fechaEvento: fechaEvento ? new Date(fechaEvento) : undefined,
@@ -325,8 +598,9 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
                     <input
                       type="text"
                       value={folio}
-                      onChange={(e) => setFolio(e.target.value)}
+                      onChange={handleFolioChange}
                       className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      placeholder="Ej: 1.234"
                       required
                     />
                   </div>
@@ -382,9 +656,12 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
                 </h3>
                 
                 {/* Formulario para agregar detalle */}
-                <div className="mb-4 rounded-lg bg-gray-50 p-4">
-                  <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
-                    <div className="md:col-span-2">
+                <div className="mb-4 rounded-lg bg-gray-50 p-3 sm:p-4">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-6">
+                    <div className="sm:col-span-2 md:col-span-2">
+                      <label className="mb-1 block text-xs font-medium text-gray-700 sm:hidden">
+                        Detalle
+                      </label>
                       <input
                         type="text"
                         value={currentDetalle.detalle}
@@ -394,6 +671,9 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
                       />
                     </div>
                     <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-700 sm:hidden">
+                        Largo
+                      </label>
                       <input
                         type="number"
                         value={currentDetalle.largo || ""}
@@ -404,33 +684,43 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
                       />
                     </div>
                     <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-700 sm:hidden">
+                        Ancho
+                      </label>
                       <input
                         type="number"
                         value={currentDetalle.alto || ""}
                         onChange={(e) => handleDetalleChange("alto", e.target.value)}
-                        placeholder="Alto"
+                        placeholder="Ancho"
                         step="0.01"
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                       />
                     </div>
                     <div>
+                      <label className="mb-1 block text-xs font-medium text-gray-700 sm:hidden">
+                        Valor M²
+                      </label>
                       <input
                         type="number"
                         value={currentDetalle.valorM2 || ""}
                         onChange={(e) => handleDetalleChange("valorM2", e.target.value)}
-                        placeholder="Valor M2"
+                        placeholder="Valor M²"
                         step="1"
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                       />
                     </div>
-                    <div>
+                    <div className="sm:col-span-2 md:col-span-1">
+                      <label className="mb-1 block text-xs font-medium text-gray-700 sm:hidden opacity-0">
+                        Agregar
+                      </label>
                       <button
                         type="button"
                         onClick={agregarDetalle}
                         className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
                       >
                         <PlusIcon className="h-4 w-4" />
-                        Agregar
+                        <span className="sm:hidden">Agregar Detalle</span>
+                        <span className="hidden sm:inline">Agregar</span>
                       </button>
                     </div>
                   </div>
@@ -438,41 +728,45 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
 
                 {/* Lista de detalles */}
                 {detalles.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-semibold text-gray-700">
-                          <th className="p-3">Detalle</th>
-                          <th className="p-3">Largo</th>
-                          <th className="p-3">Alto</th>
-                          <th className="p-3">Total M²</th>
-                          <th className="p-3">Valor M²</th>
-                          <th className="p-3">Total</th>
-                          <th className="p-3"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detalles.map((detalle, index) => (
-                          <tr key={index} className="border-b border-gray-100 text-sm">
-                            <td className="p-3">{detalle.detalle}</td>
-                            <td className="p-3">{detalle.largo}</td>
-                            <td className="p-3">{detalle.alto}</td>
-                            <td className="p-3">{detalle.totalMts}</td>
-                            <td className="p-3">{formatearDinero(detalle.valorM2)}</td>
-                            <td className="p-3 font-semibold">{formatearDinero(detalle.total)}</td>
-                            <td className="p-3">
-                              <button
-                                type="button"
-                                onClick={() => eliminarDetalle(index)}
-                                className="rounded-lg p-1 text-red-500 hover:bg-red-50"
-                              >
-                                <TrashIcon className="h-4 w-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="overflow-x-auto -mx-2 sm:mx-0">
+                    <div className="inline-block min-w-full align-middle">
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr className="text-left text-xs font-semibold text-gray-700">
+                              <th className="p-2 sm:p-3 whitespace-nowrap">Detalle</th>
+                              <th className="p-2 sm:p-3 whitespace-nowrap">Largo</th>
+                              <th className="p-2 sm:p-3 whitespace-nowrap">Ancho</th>
+                              <th className="p-2 sm:p-3 whitespace-nowrap">Total M²</th>
+                              <th className="p-2 sm:p-3 whitespace-nowrap">Valor M²</th>
+                              <th className="p-2 sm:p-3 whitespace-nowrap">Total</th>
+                              <th className="p-2 sm:p-3"></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 bg-white">
+                            <SortableContext
+                              items={detalles.map((_, index) => `detalle-${index}`)}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              {detalles.map((detalle, index) => (
+                                <SortableDetalleRow
+                                  key={`detalle-${index}`}
+                                  detalle={detalle}
+                                  index={index}
+                                  onUpdate={handleUpdateDetalle}
+                                  onDelete={eliminarDetalle}
+                                  formatearDinero={formatearDinero}
+                                />
+                              ))}
+                            </SortableContext>
+                          </tbody>
+                        </table>
+                      </DndContext>
+                    </div>
                   </div>
                 )}
 
@@ -502,26 +796,27 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
                   Descripción de la Carpa
                 </h3>
                 
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-4">
                   {/* Descripción personalizada */}
                   <div>
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                       Descripción Personalizada
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row">
                       <input
                         type="text"
                         value={currentDescripcion}
                         onChange={(e) => setCurrentDescripcion(e.target.value)}
                         placeholder="Ingresa una descripción"
-                        className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none sm:px-4"
                       />
                       <button
                         type="button"
                         onClick={agregarDescripcion}
-                        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
+                        className="flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 sm:w-auto"
                       >
-                        <PlusIcon className="h-5 w-5" />
+                        <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span className="sm:hidden">Agregar Personalizada</span>
                       </button>
                     </div>
                   </div>
@@ -531,11 +826,11 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
                     <label className="mb-2 block text-sm font-medium text-gray-700">
                       Descripción Predefinida
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2 sm:flex-row">
                       <select
                         value={selectedPredefinida}
                         onChange={(e) => setSelectedPredefinida(e.target.value)}
-                        className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none sm:px-4"
                       >
                         <option value="">Selecciona una opción</option>
                         {DESCRIPCIONES_PREDEFINIDAS.map((desc, index) => (
@@ -547,9 +842,10 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
                       <button
                         type="button"
                         onClick={agregarDescripcionPredefinida}
-                        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600"
+                        className="flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 sm:w-auto"
                       >
-                        <PlusIcon className="h-5 w-5" />
+                        <PlusIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+                        <span className="sm:hidden">Agregar Predefinida</span>
                       </button>
                     </div>
                   </div>
@@ -557,22 +853,29 @@ export function CotizacionForm({ cotizacionId, onClose, onSuccess }: CotizacionF
 
                 {/* Lista de descripciones */}
                 {descripciones.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {descripciones.map((desc, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
+                  <div className="mt-4">
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEndDescripciones}
+                    >
+                      <SortableContext
+                        items={descripciones.map((_, index) => `descripcion-${index}`)}
+                        strategy={verticalListSortingStrategy}
                       >
-                        <span className="text-sm text-gray-700">• {desc.descripcion}</span>
-                        <button
-                          type="button"
-                          onClick={() => eliminarDescripcion(index)}
-                          className="rounded-lg p-1 text-red-500 hover:bg-red-100"
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
+                        <div className="space-y-2">
+                          {descripciones.map((desc, index) => (
+                            <SortableDescripcionRow
+                              key={`descripcion-${index}`}
+                              descripcion={desc}
+                              index={index}
+                              onUpdate={handleUpdateDescripcion}
+                              onDelete={eliminarDescripcion}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
                   </div>
                 )}
               </div>

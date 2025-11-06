@@ -223,9 +223,9 @@ export function CotizacionCard({ cotizacion, onEdit, onRefresh }: CotizacionCard
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-white shadow-sm">
-                  <span className="text-base sm:text-lg font-bold text-blue-600">
-                    #{cotizacion.folio}
+                <div className="flex h-10 sm:h-12 min-w-[60px] items-center justify-center rounded-lg bg-white px-2 shadow-sm">
+                  <span className="text-sm sm:text-base font-bold text-blue-600 whitespace-nowrap">
+                    #{new Intl.NumberFormat("es-CL").format(Number(cotizacion.folio.replace(/\D/g, "")))}
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">

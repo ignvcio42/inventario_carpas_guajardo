@@ -39,6 +39,17 @@ export class CotizacionPDFService {
     }).format(valor);
   }
 
+  private formatearFolio(folio: string): string {
+    // Eliminar todo lo que no sea número
+    const numeros = folio.replace(/\D/g, "");
+    
+    // Si está vacío, retornar el original
+    if (!numeros) return folio;
+    
+    // Formatear con separador de miles
+    return new Intl.NumberFormat("es-CL").format(Number(numeros));
+  }
+
   private formatearFecha(fecha: Date | null | undefined): string {
     if (!fecha) return "";
     return new Date(fecha).toLocaleDateString("es-CL", {
@@ -84,14 +95,14 @@ export class CotizacionPDFService {
         // ============ ENCABEZADO ============
         doc.fontSize(20).font("Times-Bold").text("CARPAS GUAJARDO PROD. SPA", 70, convertY(750), { lineBreak: false });
         doc.fontSize(11).font("Times-Roman");
-        doc.text("Rut: 77.011.105-6", 70, convertY(735), { lineBreak: false });
-        doc.text("Isla Deceit N°8774", 70, convertY(720), { lineBreak: false });
-        doc.text("Pudahuel", 70, convertY(705), { lineBreak: false });
-        doc.text("cel: +569 45121257", 70, convertY(690), { lineBreak: false });
+        doc.text("Rut: 77.011.105-6", 70, convertY(728), { lineBreak: false });
+        // doc.text("Isla Deceit N°8774", 70, convertY(713), { lineBreak: false });
+        // doc.text("Pudahuel", 70, convertY(698), { lineBreak: false });
+        // doc.text("cel: +569 45121257", 70, convertY(683), { lineBreak: false });
 
         // Fecha y Folio (lado derecho)
         doc.text(`FECHA: ${fechaActual}`, 460, convertY(690), { lineBreak: false });
-        doc.text(`FOLIO: N° ${data.folio}`, 460, convertY(675), { lineBreak: false });
+        doc.text(`FOLIO: N° ${this.formatearFolio(data.folio)}`, 460, convertY(675), { lineBreak: false });
 
         // ============ TÍTULO ============
         doc.fontSize(18).font("Times-Bold").text("COTIZACIÓN", 250, convertY(650), { lineBreak: false });
@@ -149,7 +160,7 @@ export class CotizacionPDFService {
           doc.rect(colPositions[i]!, yActual, colWidths[i]!, alturaFila).stroke();
         }
         
-        const headers = ["Detalle", "Largo", "Alto", "Total Mts", "Valor M2", "Total"];
+        const headers = ["Detalle", "Largo", "Ancho", "Total Mts", "Valor M2", "Total Neto"];
         headers.forEach((header, i) => {
           const xPos = colPositions[i]!;
           const width = colWidths[i]!;

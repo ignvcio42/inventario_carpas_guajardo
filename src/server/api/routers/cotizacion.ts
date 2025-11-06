@@ -4,6 +4,13 @@ import { TRPCError } from "@trpc/server";
 import { Decimal } from "@prisma/client/runtime/library";
 import { cotizacionPDFService } from "~/server/pdf-service";
 
+// Helper para formatear folio
+const formatearFolio = (folio: string): string => {
+  const numeros = folio.replace(/\D/g, "");
+  if (!numeros) return folio;
+  return new Intl.NumberFormat("es-CL").format(Number(numeros));
+};
+
 // Schema para detalle de cotización
 const detalleSchema = z.object({
   detalle: z.string().min(1, "El detalle es requerido"),
@@ -444,7 +451,7 @@ export const cotizacionRouter = createTRPCRouter({
         return {
           success: true,
           pdf: base64,
-          filename: `Cotizacion_${cotizacion.folio}.pdf`,
+          filename: `Cotizacion_${formatearFolio(cotizacion.folio)}.pdf`,
         };
       } catch (error) {
         console.error("Error detallado al generar PDF:", error);
