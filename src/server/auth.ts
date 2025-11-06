@@ -94,6 +94,17 @@ export const authOptions: NextAuthOptions = {
     ] : []),
   ],
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Permitir inicio de sesión con credenciales
+      if (!account) return true;
+      
+      // Para OAuth providers, siempre permitir
+      if (account.provider === "google") {
+        return true;
+      }
+      
+      return true;
+    },
     session: ({ session, token }) => ({
       ...session,
       user: {
